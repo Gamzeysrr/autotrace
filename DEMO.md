@@ -1,17 +1,17 @@
-# AutoTrace — kısa demo akışı
+# Demo akışı
 
-1. **Araç Geçmişi** sayfasında Ön hasar, Dolu hasarı veya Arka hasar senaryosunu seç. Kayıtları kronolojik sırada ve kaynak türüyle göster.
-2. Dikkat gerektiren senaryolarda farklı tarih/kaynak kayıtlarını anlat. Uygulama farkı gösterir; hangi bilginin doğru olduğuna karar vermez.
-3. **Kurum kaydı oluştur** sayfasında sentetik olmayan, ancak gerçek kurumdan geldiği doğrulanmayan bir örnek kayıt oluştur. İstersen PDF ekle; yalnızca tarayıcıda hash'i hesaplanır.
-4. Phantom'ı Devnet'e bağla ve **Hash'i Solana Devnet'e kaydet** düğmesine bas. Memo içeriğinde yalnızca rastgele kayıt kodu ve tuzlanmış SHA-256 bulunur; VIN/rapor/PDF bulunmaz.
-5. JSON doğrulama paketini indir. Pakette VIN ve rapor alanları olabileceği için yalnızca alıcıyla paylaş.
-6. **Zincir kanıtını doğrula** sayfasında paketi yükle. Devnet işleminin başarılı olduğunu, Memo'nun paketle eşleştiğini ve imzalayan cüzdan adresini göster.
+1. Yerel sunum için `AutoTrace-Open.bat` dosyasını aç. Çevrimiçi Vercel sürümünde aynı API akışı Neon Postgres kullanır.
+2. Giriş yapmadan bir örnek VIN seç veya 17 karakterli VIN ile arama yap. Arama herkese açıktır.
+3. **Kurum başvurusu** sayfasında sentetik kurum ve kullanıcı oluştur. Bu başvuru kendiliğinden kayıt yetkisi vermez.
+4. Bu bilgisayarda yerel olarak tanımlanmış AutoTrace yönetici hesabıyla gir, **Başvuru onayı** ekranında başvuruyu onayla.
+5. Başvuru sahibi e-posta ve belirlediği şifreyle giriş yapar. Kurum tipi hangi rapor türlerini gönderebileceğini belirler.
+6. Raporu ekle. Sunucu onaylı kullanıcıyı kontrol eder ve raporu veritabanına yazar. Vercel sürümünde bu kayıt Neon Postgres'te kalıcı tutulur; başka tarayıcı oturumundan aynı VIN sorgulanınca görünür.
+7. Rapor yayımlanması için Phantom işlemini Solana Devnet'te onayla. Sunucu işlem imzasını, Memo'yu ve rapor hash'ini Devnet RPC'sinden doğrular; eşleşme yoksa kayıt VIN aramasında görünmez. Phantom cüzdanı demo kurum kullanıcısını temsil etmez.
 
-## Sunumda doğru ifade et
+## Hazır örnek hesaplar
 
-- Zincir kanıtı kayıt bütünlüğünü ve işlemi imzalayan cüzdanı gösterir; gerçek sigorta/ekspertiz şirketini ya da ilk bilginin doğruluğunu kanıtlamaz.
-- Üç araç geçmişi sentetik senaryo verisidir; sorgu kodları gerçek VIN değildir.
-- Yeni kayıtlar yalnızca bu tarayıcıda saklanır. Ortak veritabanı, issuer allowlist'i ve özel Anchor programı şu an yoktur.
-- Bu prototip, rapor hash'ini Solana Devnet'te herkese açık doğrulanabilir bir Memo işlemine bağlar.
+- Sigorta: `sigorta@ufuk-sigorta.test` / `UfukDemo2026!`
+- Ekspertiz: `ekspertiz@mercek-ekspertiz.test` / `MercekDemo2026!`
+- Servis: `servis@rota-otomotiv.test` / `RotaDemo2026!`
 
-Windows'ta `AutoTrace-Open.bat` ile aç. Phantom Devnet ve test SOL gerekir.
+Bütün hazır hesaplar ve senaryo verileri sentetiktir. Canlı kurum verisi entegrasyonu yoktur. Vercel sürümünün canlı çalışması için Neon Postgres'i projeye bağlamak ve `AUTOTRACE_ADMIN_EMAIL` ile `AUTOTRACE_ADMIN_PASSWORD` değişkenlerini ayarlamak gerekir.

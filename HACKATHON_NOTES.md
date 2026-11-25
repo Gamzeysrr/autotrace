@@ -10,15 +10,17 @@
 
 - VIN üzerinden sentetik araç geçmişi arama ve kronolojik kayıt akışı.
 - Farklı kaynaklardaki kayıtlar arasında örnek alan çelişkisini görünür kılma.
-- Kurum katılımcısı görünümünden demo olay/rapor kaydı oluşturma.
-- Kayıt/PDF hash'ini tarayıcıda hesaplama ve isteğe bağlı Solana Devnet Memo işlemine Phantom onayıyla yazma.
+- Public araç araması yanında kurum girişi, AutoTrace demo onay kuyruğu ve rol kontrollü rapor oluşturma.
+- Onaylı kurum hesabıyla gönderilen Solana doğrulamalı kaydı yerel SQLite'ta veya Vercel'e bağlı Neon Postgres'te saklayıp VIN aramasından gösterme.
+- Raporu yayımlamadan önce hash'ini Solana Devnet Memo işlemine Phantom ile yazma; sunucu işlem imzasını ve Memo içeriğini RPC'den doğrular.
 - Zincire yalnızca SHA-256 özeti, uygulama etiketi ve sürüm gönderme; araç kimliği ve belgeyi zincir dışında bırakma.
 
 ## Olmayanlar ve doğru çerçeve
 
 - Gerçek sigorta şirketi, ekspertiz kuruluşu, servis, SBM/kamu veri kaynağı veya gerçek araç kaydı entegrasyonu yoktur.
 - Kurum profili gerçek tüzel kişiyi doğrulamaz; demo verisi güvenilir kurum imzası değildir.
-- Backend ve paylaşılan araç sicili yoktur. Kullanıcının eklediği kayıt yalnızca kendi tarayıcısında kalır.
+- Vercel için kalıcı Postgres API'si hazırdır; ancak Neon bağlantısı ve yönetici ortam değişkenleri projeye bağlanmadan çevrimiçi rapor akışı aktif olmaz. Bu, gerçek kurum verilerine bağlı bir araç sicili değildir.
+- Demo kurum ve kullanıcı onayı gerçek tüzel kişiyi veya kullanıcı kimliğini doğrulamaz. Demo hesapları ortak örnek hesaplarıdır.
 - SHA-256/Blockchain, kayıtlanan belgenin sonradan değişmesini gösterebilir; ilk bilginin doğruluğunu veya aracın gerçek fiziksel durumunu ispatlamaz.
 - Bu nedenle ürün sunumunda “aracın tüm gerçek geçmişini bugün gösteriyor” deme. “Yetkili katılımcıların kayıtlarını bütünlüğü doğrulanabilir biçimde ilişkilendirmeyi hedefleyen prototip” de.
 

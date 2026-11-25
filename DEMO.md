@@ -1,23 +1,21 @@
-# AutoTrace — 90 saniyelik demo akışı
+# AutoTrace — sunum akışı
 
-1. **Problem (15 sn):** “Alıcı, araca ait kaza ve ekspertiz kayıtlarını farklı yerlerde görüyor; raporun kaynağına ve sonradan değiştirilip değiştirilmediğine güvenmekte zorlanıyor.”
-2. **VIN sorgusu (20 sn):** Araç Geçmişi sayfasındaki sentetik VIN `ATDEMO2021SEDAN01` ile arama yap. 2022–2026 arasına yayılmış örnek sigorta, ekspertiz ve servis kayıtlarını göster.
-3. **Çelişki (15 sn):** Eski hasar kaydında “kaput: işlem yok”, ekspertiz kaydında “kaput: boyalı” bilgisini aç. “Sistem çelişkiyi işaretliyor; hangi raporun doğru olduğuna hükmetmiyor.”
-4. **Kurum kaydı (15 sn):** Kurum Kaydı Oluştur sayfasında sentetik VIN, rapor numarası ve kısa bir kayıt özeti gir. İsteğe bağlı PDF'nin yalnızca hash'i tarayıcıda hesaplanır. Yeni kayıt yalnızca bu tarayıcıya kaydedilir.
-5. **Solana (20 sn):** Kaydın hash'ini Phantom ile Devnet Memo işlemine yaz. Cüzdandaki Memo'da yalnızca uygulama etiketi ve SHA-256 özeti bulunur; VIN veya rapor içeriği gitmez. Explorer işlem sayfasını aç.
-6. **Kapanış (5 sn):** “AutoTrace; yetkili kurum kayıtlarını VIN'e bağlayıp kaynağı ve bütünlüğü izlenebilir kılmayı hedefliyor. Bu prototipte kurum entegrasyonu sentetik olarak temsil ediliyor.”
+## 90 saniyede üç senaryo
 
-## Sunumda açıkça belirt
+1. Araç geçmişi sayfasında **Ön hasar** senaryosunu seç (`ATQ23A1B000000001`). Sigorta hasar özeti, hasar dosyası ve sonraki ekspertiz kaydını kaynak ve tarihle göster. İlk olay özetinde kaput yokken, sonraki hasar dosyasında kaput boya kalemi bulunmasını “incelenecek fark” olarak anlat.
+2. **Dolu hasarı** senaryosunu seç (`ATQ24C2D000000002`). Hasar, sigorta işlemi, boyasız onarım ve ekspertizde orijinal boya kaydı arasındaki uyumu göster.
+3. **Arka hasar** senaryosunu seç (`ATQ20E3F000000003`). Sigorta dosyasındaki bagaj kapağı değişimi, sonraki ekspertizde “orijinal” bilgisi ve kaynağı doğrulanmamış kullanıcı raporu arasındaki farkı göster.
+4. Kayıt defterinde 11 senaryo kaydını ve her birinin kaynak rolü/tarihini incele.
+5. Kurum kaydı oluştur sayfasında tarayıcıya kayıt ekle; dosya eklenirse yalnızca hash'i yerel hesaplanır.
+6. İstersen Phantom ile Devnet'e hash gönder. Cüzdan Memo'suna VIN veya rapor bilgisi girmez. Hash'in belge içeriğinin doğru olduğunu veya kaynak kurumun gerçek olduğunu kanıtlamadığını söyle.
 
-- Araç, kurum, rapor ve olay örneklerinin tamamı sentetik; gerçek sigorta, kamu, servis veya ekspertiz bağlantısı yok.
-- Kurum seçimi demodur; kayıt göndereni gerçek kurum olarak doğrulamaz ve gerçek kurumsal imza üretmez.
-- Form kayıtları sadece tarayıcı `localStorage` alanında saklanır. Ortak backend/veritabanı yoktur.
-- Blockchain hash'i sonradan dosya değişikliğini kontrol etmeye yarar; raporun ilk bilgisinin doğru olduğunu kanıtlamaz.
-- Solana Devnet işlemi sadece SHA-256 hash'i taşır; VIN, plaka ve belge zincire gönderilmez. İşlem imzalayan cüzdan adresi herkese açık olur.
-- UI / prototip çalışmaları etkinlik öncesiyse, hackathon kurallarına uygun biçimde bunu ve build sprintindeki yeni katkıları ayır.
+## Açıkça belirt
 
-## Hazırlık
+- Bu üç arama kodu standart VIN/gerçek şasi numarası değildir; kayıtlar sunum senaryolarıdır.
+- Senaryo kayıtları herhangi bir sigorta şirketi, ekspertiz firması, servis veya kamu kaynağından alınmadı. Kurum isimleri yerine kaynak rolleri gösterilir.
+- Siteye gerçek kurum bağlantısı, backend, ortak sicil veya kurumsal imza doğrulaması eklenmiş değildir. Kullanıcının eklediği kayıt yalnızca kendi tarayıcısında saklanır.
+- Bu yüzden site canlı araç geçmişi hizmeti değildir. Ürünün hedeflediği akışı gösteren prototiptir.
 
-- Yerel demo için `AutoTrace-Open.bat` çalıştır; `http://127.0.0.1:4173/` adresinde açılır.
-- Zincire hash yazacaksan Phantom'da Solana Devnet ve yeterli test SOL bulunduğunu kontrol et. İşlemi cüzdanda inceleyip kendin onayla.
-- Örnek VIN dışında gerçek araç VIN'i girme.
+## Çalıştırma
+
+Windows'ta `AutoTrace-Open.bat` dosyasına çift tıkla veya yerel sunucuda `http://127.0.0.1:4173/` adresini aç. Devnet işlemi için Phantom'da Solana Devnet seç; Memo'yu gözden geçirip işlemi kendin onayla.

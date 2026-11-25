@@ -4,10 +4,10 @@ AutoTrace, sigorta şirketleri, ekspertiz firmaları ve servislerin araç geçmi
 
 ## Bu prototipte gösterilen akış
 
-1. VIN ile araç geçmişi sorgula. Demo için `ATDEMO2021SEDAN01` kullan. Veriler sentetiktir.
+1. VIN ile araç geçmişi sorgula. Ön hasar için `ATQ23A1B000000001`, dolu hasarı için `ATQ24C2D000000002`, arka hasar için `ATQ20E3F000000003` seç. Bunlar standart VIN değildir; örnek senaryo kodlarıdır.
 2. Kaza/hasar, ekspertiz, servis veya kilometre kaydı listesinde kaynak ve tarih bilgisini gör.
 3. Raporlar arasındaki örnek tutarsızlığı incele.
-4. Kurum kaydı oluştur sayfasından bir demo kayıt gir. Yeni kayıtlar ve isteğe bağlı PDF özeti yalnızca tarayıcıda işlenir/saklanır.
+4. Kurum kaydı oluştur sayfasından bir örnek kayıt gir. Yeni kayıtlar ve isteğe bağlı PDF özeti yalnızca tarayıcıda işlenir/saklanır.
 5. İstersen kaydın SHA-256 özetini Phantom ile Solana Devnet Memo işlemine yaz. Zincire VIN, rapor metni veya PDF gönderilmez.
 
 ## Çalıştırma

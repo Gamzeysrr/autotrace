@@ -1,21 +1,23 @@
 # AutoTrace — 90 saniyelik demo akışı
 
-1. **Problem (15 sn):** “İkinci el alıcı, aynı araç için iki farklı ekspertiz raporunu yan yana bulamayabiliyor. Bir PDF'in sonradan değişip değişmediğini anlamak da zor.”
-2. **Çelişki (20 sn):** Rapor Karşılaştırma'da **Sentetik PDF A/B’yi yükle ve karşılaştır** düğmesine bas; PDF metinleri cihaz içinde çıkarılır ve “Kaput: Orijinal / Boyalı” uyuşmazlığı gösterilir. “Uygulama doğru raporu seçmiyor; alıcıya incelemesi gereken yeri gösteriyor.”
-3. **Gizlilik ve bütünlük (20 sn):** Hash ekranında PDF A hash düğmesine basıp eşleşmeyi göster; ardından PDF B düğmesiyle eşleşmeme durumunu göster ve zincir adımı için A'ya geri dön. “Belge cihazdan çıkmıyor; hash içerik doğruluğu değil, birebir dosya bütünlüğü hakkında kanıt.”
-4. **Solana (25 sn):** Phantom Devnet'e bağlıyken kanıtı kaydet. Cüzdan onay ekranında Memo'yu göster: SHA-256 özeti ve AutoTrace etiket bilgisi var; dosyanın kendisi gönderilmez. İşlem ve ödeyen cüzdan adresi herkese açıktır.
-5. **Kapanış (10 sn):** “AutoTrace, dağınık ekspertiz kayıtlarını karşılaştırılabilir ve sonradan değiştirildiği fark edilebilir hale getiriyor. Bir sonraki adımımız doğrulanmış ekspertiz kuruluşu imzaları.”
+1. **Problem (15 sn):** “Alıcı, araca ait kaza ve ekspertiz kayıtlarını farklı yerlerde görüyor; raporun kaynağına ve sonradan değiştirilip değiştirilmediğine güvenmekte zorlanıyor.”
+2. **VIN sorgusu (20 sn):** Araç Geçmişi sayfasındaki sentetik VIN `ATDEMO2021SEDAN01` ile arama yap. 2022–2026 arasına yayılmış örnek sigorta, ekspertiz ve servis kayıtlarını göster.
+3. **Çelişki (15 sn):** Eski hasar kaydında “kaput: işlem yok”, ekspertiz kaydında “kaput: boyalı” bilgisini aç. “Sistem çelişkiyi işaretliyor; hangi raporun doğru olduğuna hükmetmiyor.”
+4. **Kurum kaydı (15 sn):** Kurum Kaydı Oluştur sayfasında sentetik VIN, rapor numarası ve kısa bir kayıt özeti gir. İsteğe bağlı PDF'nin yalnızca hash'i tarayıcıda hesaplanır. Yeni kayıt yalnızca bu tarayıcıya kaydedilir.
+5. **Solana (20 sn):** Kaydın hash'ini Phantom ile Devnet Memo işlemine yaz. Cüzdandaki Memo'da yalnızca uygulama etiketi ve SHA-256 özeti bulunur; VIN veya rapor içeriği gitmez. Explorer işlem sayfasını aç.
+6. **Kapanış (5 sn):** “AutoTrace; yetkili kurum kayıtlarını VIN'e bağlayıp kaynağı ve bütünlüğü izlenebilir kılmayı hedefliyor. Bu prototipte kurum entegrasyonu sentetik olarak temsil ediliyor.”
 
-## Sunumdan önce
+## Sunumda açıkça belirt
 
-- Phantom'da Devnet ve yeterli test SOL bakiyesi olduğundan emin ol. Gerekirse resmî [Solana Devnet faucet](https://faucet.solana.com/) üzerinden test SOL al.
-- Yerel web sunucusu çalışsın; Phantom ve Solana Devnet RPC için internet bağlantısı olsun.
-- Demo raporlarının sentetik olduğunu görünür tut; Toyota/plaka/kurum/gerçek müşteri iddiasında bulunma.
-- Explorer işlem sayfasını hazırlamak için önce onaylı Devnet transaction'ı oluştur.
-- Kayıt öncesi UI prototipinin ve AI kodlama yardımının kullanıldığını, etkinlik başlamadan önce var olan çalışmaları kuralların istediği biçimde açıkla. Etkinlikte geliştirilenleri ayrı belirt.
-- Ön etkinlik doğrulama işlemi: [Devnet Explorer kaydı](https://explorer.solana.com/tx/2PTL3jpTcUn1j3pTiAKwKQ49VQSDDS8sShsbzgrwcL7ZgPzgVHmDXuNn2iS2VsfbTQrtU78DEQCsZpgUUpQToeK?cluster=devnet), slot `526136076`. Bunu hackathon sprint katkısı gibi sunma.
+- Araç, kurum, rapor ve olay örneklerinin tamamı sentetik; gerçek sigorta, kamu, servis veya ekspertiz bağlantısı yok.
+- Kurum seçimi demodur; kayıt göndereni gerçek kurum olarak doğrulamaz ve gerçek kurumsal imza üretmez.
+- Form kayıtları sadece tarayıcı `localStorage` alanında saklanır. Ortak backend/veritabanı yoktur.
+- Blockchain hash'i sonradan dosya değişikliğini kontrol etmeye yarar; raporun ilk bilgisinin doğru olduğunu kanıtlamaz.
+- Solana Devnet işlemi sadece SHA-256 hash'i taşır; VIN, plaka ve belge zincire gönderilmez. İşlem imzalayan cüzdan adresi herkese açık olur.
+- UI / prototip çalışmaları etkinlik öncesiyse, hackathon kurallarına uygun biçimde bunu ve build sprintindeki yeni katkıları ayır.
 
-## Beklenen demo hash değerleri
+## Hazırlık
 
-- PDF A (referans eşleşmesi): `FD4D228CDEE84DA3D2C6DA6E8223982C66B5B15794F8058966BF342602EF767C`
-- PDF B (farklı içerik): `D6C8069E569D53F805F26696D45C566A5E9D05C3E7EA9C1D8BACD43E201C9A7E`
+- Yerel demo için `AutoTrace-Open.bat` çalıştır; `http://127.0.0.1:4173/` adresinde açılır.
+- Zincire hash yazacaksan Phantom'da Solana Devnet ve yeterli test SOL bulunduğunu kontrol et. İşlemi cüzdanda inceleyip kendin onayla.
+- Örnek VIN dışında gerçek araç VIN'i girme.

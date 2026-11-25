@@ -1,21 +1,17 @@
-# AutoTrace — sunum akışı
+# AutoTrace — kısa demo akışı
 
-## 90 saniyede üç senaryo
+1. **Araç Geçmişi** sayfasında Ön hasar, Dolu hasarı veya Arka hasar senaryosunu seç. Kayıtları kronolojik sırada ve kaynak türüyle göster.
+2. Dikkat gerektiren senaryolarda farklı tarih/kaynak kayıtlarını anlat. Uygulama farkı gösterir; hangi bilginin doğru olduğuna karar vermez.
+3. **Kurum kaydı oluştur** sayfasında sentetik olmayan, ancak gerçek kurumdan geldiği doğrulanmayan bir örnek kayıt oluştur. İstersen PDF ekle; yalnızca tarayıcıda hash'i hesaplanır.
+4. Phantom'ı Devnet'e bağla ve **Hash'i Solana Devnet'e kaydet** düğmesine bas. Memo içeriğinde yalnızca rastgele kayıt kodu ve tuzlanmış SHA-256 bulunur; VIN/rapor/PDF bulunmaz.
+5. JSON doğrulama paketini indir. Pakette VIN ve rapor alanları olabileceği için yalnızca alıcıyla paylaş.
+6. **Zincir kanıtını doğrula** sayfasında paketi yükle. Devnet işleminin başarılı olduğunu, Memo'nun paketle eşleştiğini ve imzalayan cüzdan adresini göster.
 
-1. Araç geçmişi sayfasında **Ön hasar** senaryosunu seç (`ATQ23A1B000000001`). Sigorta hasar özeti, hasar dosyası ve sonraki ekspertiz kaydını kaynak ve tarihle göster. İlk olay özetinde kaput yokken, sonraki hasar dosyasında kaput boya kalemi bulunmasını “incelenecek fark” olarak anlat.
-2. **Dolu hasarı** senaryosunu seç (`ATQ24C2D000000002`). Hasar, sigorta işlemi, boyasız onarım ve ekspertizde orijinal boya kaydı arasındaki uyumu göster.
-3. **Arka hasar** senaryosunu seç (`ATQ20E3F000000003`). Sigorta dosyasındaki bagaj kapağı değişimi, sonraki ekspertizde “orijinal” bilgisi ve kaynağı doğrulanmamış kullanıcı raporu arasındaki farkı göster.
-4. Kayıt defterinde 11 senaryo kaydını ve her birinin kaynak rolü/tarihini incele.
-5. Kurum kaydı oluştur sayfasında tarayıcıya kayıt ekle; dosya eklenirse yalnızca hash'i yerel hesaplanır.
-6. İstersen Phantom ile Devnet'e hash gönder. Cüzdan Memo'suna VIN veya rapor bilgisi girmez. Hash'in belge içeriğinin doğru olduğunu veya kaynak kurumun gerçek olduğunu kanıtlamadığını söyle.
+## Sunumda doğru ifade et
 
-## Açıkça belirt
+- Zincir kanıtı kayıt bütünlüğünü ve işlemi imzalayan cüzdanı gösterir; gerçek sigorta/ekspertiz şirketini ya da ilk bilginin doğruluğunu kanıtlamaz.
+- Üç araç geçmişi sentetik senaryo verisidir; sorgu kodları gerçek VIN değildir.
+- Yeni kayıtlar yalnızca bu tarayıcıda saklanır. Ortak veritabanı, issuer allowlist'i ve özel Anchor programı şu an yoktur.
+- Bu prototip, rapor hash'ini Solana Devnet'te herkese açık doğrulanabilir bir Memo işlemine bağlar.
 
-- Bu üç arama kodu standart VIN/gerçek şasi numarası değildir; kayıtlar sunum senaryolarıdır.
-- Senaryo kayıtları herhangi bir sigorta şirketi, ekspertiz firması, servis veya kamu kaynağından alınmadı. Kurum isimleri yerine kaynak rolleri gösterilir.
-- Siteye gerçek kurum bağlantısı, backend, ortak sicil veya kurumsal imza doğrulaması eklenmiş değildir. Kullanıcının eklediği kayıt yalnızca kendi tarayıcısında saklanır.
-- Bu yüzden site canlı araç geçmişi hizmeti değildir. Ürünün hedeflediği akışı gösteren prototiptir.
-
-## Çalıştırma
-
-Windows'ta `AutoTrace-Open.bat` dosyasına çift tıkla veya yerel sunucuda `http://127.0.0.1:4173/` adresini aç. Devnet işlemi için Phantom'da Solana Devnet seç; Memo'yu gözden geçirip işlemi kendin onayla.
+Windows'ta `AutoTrace-Open.bat` ile aç. Phantom Devnet ve test SOL gerekir.

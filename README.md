@@ -1,34 +1,37 @@
-# AutoTrace — Araç Geçmişi Güven Katmanı
+# AutoTrace — araç geçmişi doğrulama prototipi
 
-AutoTrace, sigorta şirketleri, ekspertiz firmaları ve servislerin araç geçmişi kayıtlarını kaynaklarıyla eklemesini; araç alıcılarının da VIN üzerinden bu kayıt izini incelemesini amaçlayan Solana tabanlı hackathon prototipidir.
+AutoTrace, kaza, sigorta, ekspertiz ve servis kayıtlarını araç geçmişi akışında kaynak/tarih bilgisiyle göstermeyi; bir rapor kaydının sonradan değiştirilip değiştirilmediğini Solana Devnet'te kontrol etmeyi amaçlar.
 
-## Bu prototipte gösterilen akış
+## Örnek senaryolar
 
-1. VIN ile araç geçmişi sorgula. Ön hasar için `ATQ23A1B000000001`, dolu hasarı için `ATQ24C2D000000002`, arka hasar için `ATQ20E3F000000003` seç. Bunlar standart VIN değildir; örnek senaryo kodlarıdır.
-2. Kaza/hasar, ekspertiz, servis veya kilometre kaydı listesinde kaynak ve tarih bilgisini gör.
-3. Raporlar arasındaki örnek tutarsızlığı incele.
-4. Kurum kaydı oluştur sayfasından bir örnek kayıt gir. Yeni kayıtlar ve isteğe bağlı PDF özeti yalnızca tarayıcıda işlenir/saklanır.
-5. İstersen kaydın SHA-256 özetini Phantom ile Solana Devnet Memo işlemine yaz. Zincire VIN, rapor metni veya PDF gönderilmez.
+- Ön hasar: `ATQ23A1B000000001`
+- Dolu hasarı: `ATQ24C2D000000002`
+- Arka hasar: `ATQ20E3F000000003`
+
+Bu sorgu kodları standart VIN değildir; kayıtlar tamamen senaryo verisidir. Gerçek sigorta, kamu, servis veya ekspertiz kaynağı bu projeye bağlı değildir.
+
+## Solana Devnet akışı
+
+1. Kurum kaydı formunda kayıt alanlarını ve istersen PDF'yi seç. PDF tarayıcıda okunur, dosyanın kendisi yüklenmez.
+2. Tarayıcı kayıt alanlarını rastgele bir tuzla birleştirip SHA-256 hesaplar.
+3. Phantom Devnet işlemini imzalar. Memo'ya yalnızca rastgele kayıt kodu ve tuzlanmış hash yazılır. VIN, rapor numarası, kayıt metni ve PDF zincire girmez.
+4. İşlemden sonra indirilen JSON doğrulama paketini alıcıya gönder. Paket rapor alanlarını ve VIN'i içerebilir; bu yüzden yalnızca paylaşma iznin olan kişiye ilet.
+5. Alıcı **Zincir kanıtını doğrula** sayfasında paketi yükler. Uygulama JSON hash'ini Devnet Memo'suyla, isteğe bağlı aynı PDF'yi de paket içindeki PDF hash'iyle karşılaştırır; işlem imzalayan cüzdanı gösterir.
 
 ## Çalıştırma
 
-Windows'ta `AutoTrace-Open.bat` dosyasına çift tıkla. Alternatif olarak PowerShell'de proje klasöründe `python -m http.server 4173 --bind 127.0.0.1` çalıştır ve `http://127.0.0.1:4173/` adresini aç. PDF eki özeti ve Devnet işlemi için HTTPS veya localhost gerekir.
+Windows'ta `AutoTrace-Open.bat` dosyasına çift tıkla. Alternatif olarak PowerShell'de proje klasöründe `python -m http.server 4173 --bind 127.0.0.1` çalıştır ve `http://127.0.0.1:4173/` adresini aç. Devnet doğrulaması ve Phantom için internet gerekir.
 
-Devnet işlemi için Phantom eklentisini resmi kaynağından kur, Solana ağını Devnet yap ve Phantom penceresinde her Memo'yu kontrol ederek onayla. Test SOL'un gerçek değeri yoktur. Kurtarma kelimelerini veya özel anahtarları hiçbir yere girme.
+Phantom'da Solana ağını **Devnet** seç. İşlem Memo'sunu inceleyip cüzdanında onayla. Test SOL'un gerçek değeri yoktur. Kurtarma kelimelerini veya özel anahtarları hiçbir yere girme.
 
-## Doğruluk ve kapsam sınırları
+## Sınırlar
 
-- Araç, sigorta, ekspertiz, servis, kaza ve tutanak örneklerinin tamamı sentetiktir.
-- Bu paket gerçek kurum kimliği doğrulaması, sigorta/kamu veri entegrasyonu, kullanıcı hesabı, backend veya ortak veritabanı içermez. Form kayıtları sadece bu tarayıcıya kaydedilir.
-- Prototipteki kurum profilleri demo etiketleridir; gerçek bir kurum imzası olarak sunulmaz.
-- Hash, referans kaydı sonrasında belgenin değişip değişmediğini kontrol etmeye yarar. İlk girilen bilginin doğru olduğunu, raporu yetkili kurumun hazırladığını veya aracın fiziksel durumunu tek başına kanıtlamaz.
-- Plaka kişisel/veri eşleştirme riski nedeniyle bu prototipte arama anahtarı değildir. Kalıcı eşleştirme için VIN kullanılır; üretim ortamında erişim izni ve mevzuat ayrıca ele alınmalıdır.
-- Solana işlemi sadece `app`, sürüm ve SHA-256 değerini Memo'ya yazar. Zincir işlemi hash için zamanlı bir kanıttır; kurumsal imza yerine geçmez.
+- Uygulama şu an özel Anchor programı veya PDA kayıt sicili kullanmaz; Solana Memo Programı'na işlem gönderir.
+- Araç senaryo kayıtları ve yeni form kayıtları tarayıcı `localStorage` alanında tutulur. Ortak VIN arama servisi veya backend yoktur.
+- İmzalayan cüzdan, bir kurumun gerçek tüzel kimliğini kanıtlamaz. Kurum anahtarı kayıt/allowlist sistemi henüz yoktur.
+- Devnet Memo'su bir hash için herkese açık, değiştirilemez bir referans sunar. Hash ilk girilen bilginin doğru olduğunu veya araç durumunu kanıtlamaz.
+- Bir üretim ürününde VIN->kayıt eşlemesi erişim kontrollü zincir dışı bir serviste, doğrulama kanıtları Solana'da tutulmalı; gerçek kurum imzaları ve onaylı issuer kayıtları eklenmelidir.
 
-## Üretim sistemine giden yol
+## Teknik
 
-Gerçek ekosistem için yetkili veri üreticileriyle entegrasyon ve sözleşmeler, kurum anahtarıyla dijital imza, güvenli zincir dışı belge saklama, araç sahibinin onayı/erişim yetkisi, denetim izi ve kişisel veri mevzuatına uygun mimari gerekir. Bu hackathon demosu ürün akışını ve bir hash'in Solana Devnet'e yazılmasını gösterir; bu entegrasyonların tamamlandığı iddiasında bulunmaz.
-
-## Teknik bileşenler
-
-Tek HTML/CSS/JavaScript uygulaması, Web Crypto SHA-256, Phantom injected wallet, yerel olarak paketlenmiş `@solana/web3.js` ve Solana Devnet Memo programı. Üçüncü taraf lisansları `vendor/` klasöründedir.
+Tek HTML/CSS/JavaScript uygulaması, Web Crypto SHA-256, Phantom injected wallet, yerel `@solana/web3.js` tarayıcı paketi ve Solana Devnet Memo Programı. Üçüncü taraf lisansları `vendor/` klasöründedir.

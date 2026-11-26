@@ -10,8 +10,19 @@
 
 ## Preset sample accounts
 
-- Insurance: `sigorta@ufuk-sigorta.test` / `UfukDemo2026!`
-- Vehicle inspection: `ekspertiz@mercek-ekspertiz.test` / `MercekDemo2026!`
-- Service center: `servis@rota-otomotiv.test` / `RotaDemo2026!`
+**Insurance**
+
+- Email: `sigorta@ufuk-sigorta.test`
+- Password: `UfukDemo2026!`
+
+**Vehicle inspection**
+
+- Email: `ekspertiz@mercek-ekspertiz.test`
+- Password: `MercekDemo2026!`
+
+**Service center**
+
+- Email: `servis@rota-otomotiv.test`
+- Password: `RotaDemo2026!`
 
 All preset accounts and scenario data are fictional. There is no live institutional data integration. The hosted Vercel app uses Neon Postgres. The local demo uses SQLite. The AutoTrace program must be deployed to Devnet for the report submission flow.

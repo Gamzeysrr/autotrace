@@ -27,11 +27,22 @@ Node.js 22.15 or later is required. On Windows, double-click `AutoTrace-Open.bat
 
 ### Fictional institution accounts
 
-| Sample institution | Login email | Password |
-|---|---|---|
-| Horizon Insurance (sample) | `sigorta@ufuk-sigorta.test` | `UfukDemo2026!` |
-| Clearview Vehicle Inspection (sample) | `ekspertiz@mercek-ekspertiz.test` | `MercekDemo2026!` |
-| Northstar Service Center (sample) | `servis@rota-otomotiv.test` | `RotaDemo2026!` |
+Each credential is listed separately so visitors can copy and paste it into the sign-in form.
+
+**Horizon Insurance (sample)**
+
+- Email: `sigorta@ufuk-sigorta.test`
+- Password: `UfukDemo2026!`
+
+**Clearview Vehicle Inspection (sample)**
+
+- Email: `ekspertiz@mercek-ekspertiz.test`
+- Password: `MercekDemo2026!`
+
+**Northstar Service Center (sample)**
+
+- Email: `servis@rota-otomotiv.test`
+- Password: `RotaDemo2026!`
 
 The preset account buttons fill in the sample institution credentials. The AutoTrace administrator account is configured locally and is not included in source files or packages. To try the application flow, sign in as the administrator, approve a submitted institution application, then sign in with that applicant's account and submit a report.
 

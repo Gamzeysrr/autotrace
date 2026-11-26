@@ -1,17 +1,17 @@
-# Demo akışı
+# Demo walkthrough
 
-1. Yerel sunum için `AutoTrace-Open.bat` dosyasını aç. Çevrimiçi Vercel sürümünde aynı API akışı Neon Postgres kullanır.
-2. Giriş yapmadan bir örnek VIN seç veya 17 karakterli VIN ile arama yap. Arama herkese açıktır.
-3. **Kurum başvurusu** sayfasında sentetik kurum ve kullanıcı oluştur. Bu başvuru kendiliğinden kayıt yetkisi vermez.
-4. Bu bilgisayarda yerel olarak tanımlanmış AutoTrace yönetici hesabıyla gir, **Başvuru onayı** ekranında başvuruyu onayla.
-5. Başvuru sahibi e-posta ve belirlediği şifreyle giriş yapar. Kurum tipi hangi rapor türlerini gönderebileceğini belirler.
-6. Raporu ekle. Sunucu onaylı kullanıcıyı kontrol eder ve raporu veritabanına yazar. Vercel sürümünde bu kayıt Neon Postgres'te kalıcı tutulur; başka tarayıcı oturumundan aynı VIN sorgulanınca görünür.
-7. Rapor yayımlanması için Phantom işlemini Solana Devnet'te onayla. Tarayıcı AutoTrace Anchor programının `anchor_report` instruction'ını gönderir; sunucu işlem imzasını, programı, kayıt kimliğini ve rapor hash'ini Devnet RPC'sinden doğrular. Eşleşme yoksa kayıt VIN aramasında görünmez. Phantom imzası demo kurum kullanıcısının gerçek kurumsal kimliğini kanıtlamaz.
+1. For a local presentation, launch `AutoTrace-Open.bat`. The hosted Vercel app uses the same API flow with Neon Postgres.
+2. Search a sample scenario or enter a 17-character VIN. Searching is public and does not require an account.
+3. Open **Institution Application** and create a fictional institution and user. Submitting an application does not grant write access.
+4. Sign in with the AutoTrace administrator account configured on this computer and approve the application from **Application Review**.
+5. The applicant signs in with the email and password they submitted. The institution type determines which report types they can submit.
+6. Prepare a report. The server checks the approved account and, after verifying its Solana proof, stores the report in the database. On Vercel, the report is stored in Neon Postgres and can be retrieved by VIN from another browser session.
+7. To publish a report, approve the Phantom transaction on Solana Devnet. The browser calls the AutoTrace Anchor program's `anchor_report` instruction. The server verifies the transaction signature, program ID, record ID, and report hash through Devnet RPC. A report without a matching proof is not shown in VIN search. A Phantom signature identifies a wallet; it does not prove the demo user's real-world institutional identity.
 
-## Hazır örnek hesaplar
+## Preset sample accounts
 
-- Sigorta: `sigorta@ufuk-sigorta.test` / `UfukDemo2026!`
-- Ekspertiz: `ekspertiz@mercek-ekspertiz.test` / `MercekDemo2026!`
-- Servis: `servis@rota-otomotiv.test` / `RotaDemo2026!`
+- Insurance: `sigorta@ufuk-sigorta.test` / `UfukDemo2026!`
+- Vehicle inspection: `ekspertiz@mercek-ekspertiz.test` / `MercekDemo2026!`
+- Service center: `servis@rota-otomotiv.test` / `RotaDemo2026!`
 
-Bütün hazır hesaplar ve senaryo verileri sentetiktir. Canlı kurum verisi entegrasyonu yoktur. Canlı Vercel akışı için Neon Postgres ve yönetici ortam değişkenleri gerekir. Devnet kullanıcı akışı için Anchor programının Devnet'e dağıtılmış olması gerekir.
+All preset accounts and scenario data are fictional. There is no live institutional data integration. The hosted Vercel app uses Neon Postgres. The local demo uses SQLite. The AutoTrace program must be deployed to Devnet for the report submission flow.

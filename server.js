@@ -85,12 +85,12 @@ function ensureAdminAccount() {
     if (existing.email!==config.email || existing.password_salt!==config.passwordSalt || existing.password_hash!==config.passwordHash) {
       db.prepare('DELETE FROM sessions WHERE user_id=?').run(existing.id);
       db.prepare(`UPDATE users SET institution_id=NULL,name=?,email=?,password_salt=?,password_hash=?,status='approved' WHERE id=?`)
-        .run('AutoTrace Demo Yöneticisi',config.email,config.passwordSalt,config.passwordHash,existing.id);
+        .run('AutoTrace Demo Administrator',config.email,config.passwordSalt,config.passwordHash,existing.id);
     }
     return;
   }
   db.prepare(`INSERT INTO users (id,institution_id,name,email,password_salt,password_hash,role,status,created_at) VALUES (?,NULL,?,?,?,?,?,'approved',?)`)
-    .run(id(),'AutoTrace Demo Yöneticisi',config.email,config.passwordSalt,config.passwordHash,'admin',isoNow());
+    .run(id(),'AutoTrace Demo Administrator',config.email,config.passwordSalt,config.passwordHash,'admin',isoNow());
 }
 
 if (!db.prepare('SELECT 1 FROM institutions LIMIT 1').get()) {
@@ -130,7 +130,7 @@ function userFromRequest(req) {
 function publicUser(user) {
   return { id:user.id, name:user.name, email:user.email, role:user.role,
     institutionId:user.institution_id, institutionName:user.institution_name || 'AutoTrace',
-    institutionType:user.institution_type || 'Yönetim' };
+    institutionType:user.institution_type || 'Administration' };
 }
 function decodeBase58(value) {
   const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -152,35 +152,35 @@ function proofInstruction(recordId,digest) {
   return Buffer.concat([discriminator,Buffer.from(clean,'hex'),Buffer.from(String(digest),'hex')]);
 }
 async function verifyDevnetProgram(signature, recordId, digest) {
-  if (!/^[1-9A-HJ-NP-Za-km-z]{80,90}$/.test(String(signature || ''))) throw new Error('Solana işlem imzası biçimi geçersiz.');
+  if (!/^[1-9A-HJ-NP-Za-km-z]{80,90}$/.test(String(signature || ''))) throw new Error('The Solana transaction signature format is invalid.');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
   try {
     const response=await fetch(DEVNET_RPC_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
       body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getTransaction',params:[signature,{commitment:'confirmed',encoding:'jsonParsed',maxSupportedTransactionVersion:0}]})});
-    if (!response.ok) throw new Error('Solana Devnet doğrulama servisi yanıt vermedi.');
+    if (!response.ok) throw new Error('The Solana Devnet verification service did not respond.');
     const payload=await response.json();
-    if (payload.error) throw new Error('Solana işlemi Devnet’ten doğrulanamadı.');
+    if (payload.error) throw new Error('Could not verify the Solana transaction on Devnet.');
     const tx=payload.result;
-    if (!tx) throw new Error('İşlem Devnet’te bulunamadı veya henüz kesinleşmedi.');
-    if (tx.meta?.err) throw new Error('Solana işlemi başarısız olmuş.');
-    if (!tx.transaction?.signatures?.includes(signature)) throw new Error('İmza, Devnet işlem içeriğiyle eşleşmedi.');
+    if (!tx) throw new Error('Transaction not found on Devnet or not yet finalized.');
+    if (tx.meta?.err) throw new Error('The Solana transaction failed.');
+    if (!tx.transaction?.signatures?.includes(signature)) throw new Error('The signature does not match the Devnet transaction.');
     const instructions=tx.transaction.message?.instructions||[];
     const proofIx=instructions.find(ix=>String(ix.programId)===AUTOTRACE_PROGRAM_ID);
-    if(!proofIx)throw new Error('İşlem AutoTrace programını çağırmıyor.');
+    if(!proofIx)throw new Error('The transaction does not call the AutoTrace program.');
     if(!decodeBase58(proofIx.data||'').equals(proofInstruction(recordId,digest)))throw new Error('AutoTrace program instruction does not match this report.');
     const signer=tx.transaction.message.accountKeys?.find(key=>key.signer);
-    if (!signer) throw new Error('İşlemi imzalayan cüzdan bulunamadı.');
+    if (!signer) throw new Error('Could not identify the wallet that signed the transaction.');
     return String(signer.pubkey);
   } catch (err) {
-    if (err.name==='AbortError') throw new Error('Devnet doğrulaması zaman aşımına uğradı. Yeniden deneyebilirsin.');
+    if (err.name==='AbortError') throw new Error('Devnet verification timed out. Please try again.');
     throw err;
   } finally { clearTimeout(timeout); }
 }
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let raw='';
-    req.on('data', chunk => { raw += chunk; if (raw.length > 1024 * 1024) reject(new Error('İstek boyutu çok büyük.')); });
-    req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch { reject(new Error('Geçersiz JSON.')); } });
+    req.on('data', chunk => { raw += chunk; if (raw.length > 1024 * 1024) reject(new Error('The request is too large.')); });
+    req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch { reject(new Error('Invalid JSON.')); } });
     req.on('error', reject);
   });
 }
@@ -188,7 +188,7 @@ async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (url.pathname.startsWith('/api/') && req.method !== 'GET') {
     const origin = req.headers.origin;
-    if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error:'Bu kaynağa izin verilmiyor.' });
+    if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error:'This origin is not allowed.' });
   }
   try {
     if (url.pathname === '/api/health') return send(res, 200, { ok:true, mode:'local-demo', chainRequired:true, chainProgram:AUTOTRACE_PROGRAM_ID, chainNetwork:'devnet', version:'autotrace-program-v1' });
@@ -206,7 +206,7 @@ async function handler(req, res) {
       const email = String(body.email || '').trim().toLowerCase();
       const row = db.prepare('SELECT * FROM users WHERE email=? AND status=\'approved\'').get(email);
       if (!row || !crypto.timingSafeEqual(Buffer.from(password(String(body.password || ''), row.password_salt).hash, 'hex'), Buffer.from(row.password_hash, 'hex'))) {
-        return send(res, 401, { error:'E-posta veya şifre hatalı. Onaylı demo hesabı kullan.' });
+        return send(res, 401, { error:'Incorrect email or password. Use an approved demo account.' });
       }
       const token = crypto.randomBytes(32).toString('base64url');
       const expires = Date.now() + SESSION_DAYS * 86400_000;
@@ -225,26 +225,26 @@ async function handler(req, res) {
       const b = await parseBody(req);
       const institutionName=String(b.institutionName||'').trim(), institutionType=String(b.institutionType||'').trim();
       const contactName=String(b.contactName||'').trim(), email=String(b.email||'').trim().toLowerCase(), pass=String(b.password||'');
-      if (institutionName.length<3 || institutionName.length>100 || contactName.length<2 || contactName.length>80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || pass.length<10 || !['Sigorta şirketi','Ekspertiz firması','Yetkili servis'].includes(institutionType)) return send(res, 400, { error:'Alanları kontrol et. Şifre en az 10 karakter olmalı.' });
-      if (db.prepare('SELECT id FROM users WHERE email=?').get(email) || db.prepare('SELECT id FROM applications WHERE email=? AND status=\'pending\'').get(email)) return send(res, 409, { error:'Bu e-posta için hesap veya bekleyen başvuru zaten var.' });
+      if (institutionName.length<3 || institutionName.length>100 || contactName.length<2 || contactName.length>80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || pass.length<10 || !['Sigorta şirketi','Ekspertiz firması','Yetkili servis'].includes(institutionType)) return send(res, 400, { error:'Check the fields. The password must be at least 10 characters.' });
+      if (db.prepare('SELECT id FROM users WHERE email=?').get(email) || db.prepare('SELECT id FROM applications WHERE email=? AND status=\'pending\'').get(email)) return send(res, 409, { error:'An account or pending application already exists for this email.' });
       const pw=password(pass), appId=id();
       db.prepare(`INSERT INTO applications (id,institution_name,institution_type,contact_name,email,password_salt,password_hash,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)`)
         .run(appId,institutionName,institutionType,contactName,email,pw.salt,pw.hash,'pending',isoNow());
-      return send(res, 201, { ok:true, message:'Başvuru AutoTrace demo yöneticisinin onayına gönderildi.' });
+      return send(res, 201, { ok:true, message:'Application submitted for review by the AutoTrace demo administrator.' });
     }
     if (url.pathname === '/api/admin/applications' && req.method === 'GET') {
       const admin=userFromRequest(req);
-      if (!admin || admin.role!=='admin') return send(res, 403, { error:'Bu işlem AutoTrace yöneticisi gerektirir.' });
+      if (!admin || admin.role!=='admin') return send(res, 403, { error:'This action requires an AutoTrace administrator account.' });
       const rows=db.prepare(`SELECT id,institution_name,institution_type,contact_name,email,created_at FROM applications WHERE status='pending' ORDER BY created_at`).all();
       return send(res, 200, { applications:rows });
     }
     const approveMatch=url.pathname.match(/^\/api\/admin\/applications\/([\w-]+)\/approve$/);
     if (approveMatch && req.method==='POST') {
       const admin=userFromRequest(req);
-      if (!admin || admin.role!=='admin') return send(res, 403, { error:'Bu işlem AutoTrace yöneticisi gerektirir.' });
+      if (!admin || admin.role!=='admin') return send(res, 403, { error:'This action requires an AutoTrace administrator account.' });
       const app=db.prepare(`SELECT * FROM applications WHERE id=? AND status='pending'`).get(approveMatch[1]);
-      if (!app) return send(res, 404, { error:'Bekleyen başvuru bulunamadı.' });
-      if (db.prepare('SELECT id FROM users WHERE email=?').get(app.email)) return send(res, 409, { error:'E-posta ile kullanıcı zaten mevcut.' });
+      if (!app) return send(res, 404, { error:'No pending application was found.' });
+      if (db.prepare('SELECT id FROM users WHERE email=?').get(app.email)) return send(res, 409, { error:'A user with this email already exists.' });
       const orgId=id(), userId=id();
       db.exec('BEGIN IMMEDIATE');
       try {
@@ -253,46 +253,46 @@ async function handler(req, res) {
         db.prepare(`UPDATE applications SET status='approved' WHERE id=?`).run(app.id);
         db.exec('COMMIT');
       } catch (err) { db.exec('ROLLBACK'); throw err; }
-      return send(res, 200, { ok:true, message:'Kurum onaylandı ve kullanıcı hesabı açıldı.' });
+      return send(res, 200, { ok:true, message:'The institution was approved and its user account was created.' });
     }
     const ownedRecordMatch=url.pathname.match(/^\/api\/records\/([\w-]+)$/);
     if (ownedRecordMatch && req.method==='GET') {
       const user=userFromRequest(req);
-      if (!user || user.role!=='issuer') return send(res,403,{error:'Kurum oturumu gerekli.'});
+      if (!user || user.role!=='issuer') return send(res,403,{error:'An institution session is required.'});
       const row=db.prepare('SELECT body_json FROM records WHERE record_id=? AND issuer_user_id=?').get(ownedRecordMatch[1],user.id);
-      if (!row) return send(res,404,{error:'Bu kurum kullanıcısına ait kayıt bulunamadı.'});
+      if (!row) return send(res,404,{error:'No record was found for this institution user.'});
       return send(res,200,{record:JSON.parse(row.body_json)});
     }
     if (url.pathname === '/api/records' && req.method === 'GET') {
       const vin=String(url.searchParams.get('vin')||'').trim().toUpperCase();
-      if (vin.length!==17) return send(res,400,{error:'Araç geçmişi sorgusu için 17 karakterli şasi numarası gerekli.'});
+      if (vin.length!==17) return send(res,400,{error:'A 17-character VIN is required to search vehicle history.'});
       const rows=db.prepare('SELECT body_json FROM records WHERE vin=? ORDER BY created_at').all(vin);
       return send(res, 200, { records:rows.map(r=>JSON.parse(r.body_json)).filter(r=>r.chain_verified===true && !!r.signature) });
     }
     if (url.pathname === '/api/records' && req.method === 'POST') {
       const user=userFromRequest(req);
-      if (!user || user.role!=='issuer' || !user.institution_id) return send(res, 403, { error:'Kayıt eklemek için AutoTrace tarafından onaylı kurum kullanıcısı olarak giriş yapmalısın.' });
+      if (!user || user.role!=='issuer' || !user.institution_id) return send(res, 403, { error:'Sign in as an institution user approved by AutoTrace to submit a report.' });
       const org=db.prepare(`SELECT id,name,type,status FROM institutions WHERE id=?`).get(user.institution_id);
-      if (!org || org.status!=='approved') return send(res, 403, { error:'Kurumun AutoTrace onayı etkin değil.' });
+      if (!org || org.status!=='approved') return send(res, 403, { error:'This institution does not have active AutoTrace approval.' });
       const b=await parseBody(req), record=b.record;
-      if (!record || !/^[A-HJ-NPR-Z0-9]{17}$/i.test(String(record.vin||'')) || !(record.reportNo||record.id) || !record.type || !record.details || !record.hash || !record.salt || !record.proofRecord || !record.signature) return send(res, 400, { error:'Rapor alanları eksik. Solana Devnet kanıtı zorunludur.' });
+      if (!record || !/^[A-HJ-NPR-Z0-9]{17}$/i.test(String(record.vin||'')) || !(record.reportNo||record.id) || !record.type || !record.details || !record.hash || !record.salt || !record.proofRecord || !record.signature) return send(res, 400, { error:'Required report fields are missing. A Solana Devnet proof is required.' });
       const normalizedVin=String(record.vin).toUpperCase();
       const allowedTypes={
-        'Sigorta şirketi':['Kaza / hasar kaydı','Sigorta hasar dosyası'],
-        'Ekspertiz firması':['Ekspertiz raporu'],
-        'Yetkili servis':['Onarım / parça değişimi','Kilometre bildirimi']
+        'Sigorta şirketi':['Accident / damage record','Insurance claim file'],
+        'Ekspertiz firması':['Inspection report'],
+        'Yetkili servis':['Repair / part replacement','Mileage report']
       };
-      if (!allowedTypes[org.type]?.includes(String(record.type))) return send(res,403,{error:`${org.type} bu kayıt türünü ekleyemez.`});
+      if (!allowedTypes[org.type]?.includes(String(record.type))) return send(res,403,{error:`This institution cannot submit this record type.`});
       const proofRecord={schema_version:1,record_id:String(record.record_id||record.recordId||''),report_no:String(record.reportNo||record.id),type:String(record.type),vin:normalizedVin,source:`${org.name} · ${org.type}`,date:String(record.date||''),details:String(record.details),pdf_sha256:record.proofRecord.pdf_sha256||null};
-      if (!proofRecord.record_id || !/^\d{4}-\d{2}-\d{2}$/.test(proofRecord.date) || proofRecord.details.length>500 || proofRecord.report_no.length>40) return send(res,400,{error:'Kayıt alanları beklenen biçimde değil.'});
+      if (!proofRecord.record_id || !/^\d{4}-\d{2}-\d{2}$/.test(proofRecord.date) || proofRecord.details.length>500 || proofRecord.report_no.length>40) return send(res,400,{error:'The report fields are not in the expected format.'});
       const expectedHash=crypto.createHash('sha256').update(String(record.salt)+'|'+JSON.stringify(proofRecord)).digest('hex');
-      if (expectedHash!==String(record.hash) || JSON.stringify(proofRecord)!==JSON.stringify(record.proofRecord)) return send(res,400,{error:'Rapor kanıt özeti içerikle eşleşmiyor veya kurum bilgisi değişmiş.'});
+      if (expectedHash!==String(record.hash) || JSON.stringify(proofRecord)!==JSON.stringify(record.proofRecord)) return send(res,400,{error:'The report proof digest does not match the content, or the institution details have changed.'});
       let chainSigner;
       try { chainSigner=await verifyDevnetProgram(String(record.signature),proofRecord.record_id,expectedHash); }
-      catch (err) { return send(res,502,{error:err.message||'Solana Devnet kanıtı doğrulanamadı.'}); }
-      const safe={...record,record_id:proofRecord.record_id,proofRecord,vin:normalizedVin,source:`${org.name} · ${org.type}`,institution_id:org.id,institution_name:org.name,issuer_user_id:user.id,issuer_name:user.name,issuer:chainSigner,chain_verified:true,status:'AutoTrace yetkili kurum kaydı · Solana Devnet kanıtı doğrulandı',created_at:isoNow(),warn:false};
+      catch (err) { return send(res,502,{error:err.message||'Could not verify the Solana Devnet proof.'}); }
+      const safe={...record,record_id:proofRecord.record_id,proofRecord,vin:normalizedVin,source:`${org.name} · ${org.type}`,institution_id:org.id,institution_name:org.name,issuer_user_id:user.id,issuer_name:user.name,issuer:chainSigner,chain_verified:true,status:'AutoTrace-authorized institution record · Solana Devnet proof verified',created_at:isoNow(),warn:false};
       const existing=db.prepare('SELECT issuer_user_id FROM records WHERE record_id=?').get(safe.record_id);
-      if (existing && existing.issuer_user_id!==user.id) return send(res,409,{error:'Bu kayıt kodu başka bir kurum hesabına ait.'});
+      if (existing && existing.issuer_user_id!==user.id) return send(res,409,{error:'This record ID belongs to another institution account.'});
       if (existing) db.prepare('UPDATE records SET vin=?,body_json=?,created_at=? WHERE record_id=? AND issuer_user_id=?').run(safe.vin,JSON.stringify(safe),safe.created_at,safe.record_id,user.id);
       else db.prepare('INSERT INTO records (record_id,vin,body_json,issuer_user_id,institution_id,created_at) VALUES (?,?,?,?,?,?)').run(safe.record_id,safe.vin,JSON.stringify(safe),user.id,org.id,safe.created_at);
       return send(res, 201, { record:safe });
@@ -301,18 +301,18 @@ async function handler(req, res) {
       const rows=db.prepare(`SELECT name,type,email,status,created_at FROM institutions ORDER BY name`).all();
       return send(res, 200, { institutions:rows });
     }
-    if (url.pathname.startsWith('/api/')) return send(res, 404, { error:'API uç noktası bulunamadı.' });
+    if (url.pathname.startsWith('/api/')) return send(res, 404, { error:'API endpoint not found.' });
     const requested=decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
     const file=path.resolve(ROOT, '.' + requested);
-    if (!file.startsWith(ROOT + path.sep) && file!==path.join(ROOT,'index.html')) return send(res,404,{error:'Dosya bulunamadı.'});
+    if (!file.startsWith(ROOT + path.sep) && file!==path.join(ROOT,'index.html')) return send(res,404,{error:'File not found.'});
     const stat=fs.statSync(file);
-    if (!stat.isFile()) return send(res,404,{error:'Dosya bulunamadı.'});
+    if (!stat.isFile()) return send(res,404,{error:'File not found.'});
     res.writeHead(200, { 'Content-Type':mime[path.extname(file)]||'application/octet-stream', 'X-Content-Type-Options':'nosniff', 'Referrer-Policy':'strict-origin-when-cross-origin' });
     fs.createReadStream(file).pipe(res);
   } catch (err) {
-    if (err.code==='SQLITE_CONSTRAINT_PRIMARYKEY' || err.code==='SQLITE_CONSTRAINT_UNIQUE') return send(res,409,{error:'Bu kayıt kodu veya e-posta zaten kullanılıyor.'});
+    if (err.code==='SQLITE_CONSTRAINT_PRIMARYKEY' || err.code==='SQLITE_CONSTRAINT_UNIQUE') return send(res,409,{error:'This record ID or email is already in use.'});
     console.error(err);
-    return send(res,500,{error:'Sunucu işlemi tamamlayamadı.'});
+    return send(res,500,{error:'The server could not complete the request.'});
   }
 }
 

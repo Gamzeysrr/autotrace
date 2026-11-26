@@ -1,39 +1,41 @@
-# AutoTrace — hackathon çalışma notu
+# AutoTrace — Hackathon notes
 
-**Tek cümle:** AutoTrace; sigorta, ekspertiz ve servis kayıtlarının VIN ile ilişkilendirildiği, kaynak ve belge bütünlüğünün izlenebildiği bir araç geçmişi ekosistemi prototipidir.
+**In one sentence:** AutoTrace is a vehicle-history prototype that links insurance, inspection, and service records to a VIN and makes their source and document integrity traceable.
 
-## Ürün hedefi
+## Product goal
 
-İkinci el araç alıcısı bir plakayı/VIN'i sorguladığında, aracın geçmişindeki kaza, ekspertiz, onarım ve benzeri kayıtları kaynakları ve zamanlarıyla inceleyebilsin. Kayıt üreticileri yetkili sigorta şirketi, ekspertiz firması veya servis olsun. Plaka değişebileceği için kalıcı araç bağında VIN kullanılır; gerçek sistemde VIN erişimi de izin ve mevzuatla korunmalıdır.
+When a used-car buyer searches a vehicle, they should be able to review accident, inspection, repair, and related records with their sources and timestamps. Records should be submitted by authorized insurers, inspection firms, or service centers. Because license plates can change, the VIN is used as the persistent vehicle identifier. In a real system, access to VINs must also be governed by consent and applicable law.
 
-## Hackathon prototipinde gösterilen
+## What the hackathon prototype demonstrates
 
-- VIN üzerinden sentetik araç geçmişi arama ve kronolojik kayıt akışı.
-- Farklı kaynaklardaki kayıtlar arasında örnek alan çelişkisini görünür kılma.
-- Public araç araması yanında kurum girişi, AutoTrace demo onay kuyruğu ve rol kontrollü rapor oluşturma.
-- Onaylı kurum hesabıyla gönderilen Solana doğrulamalı kaydı yerel SQLite'ta veya Vercel'e bağlı Neon Postgres'te saklayıp VIN aramasından gösterme.
-- AutoTrace'a özgü Anchor/Rust programı Devnet'e dağıtıldı; Explorer program hesabını çalıştırılabilir olarak gösteriyor. Dağıtım imzası ve program adresi README'de yer alıyor. Rapor ekleme talimatının ayrıca örnek bir kayıtla uçtan uca denenmesi gerekiyor.
-- Zincire yalnızca SHA-256 özeti, uygulama etiketi ve sürüm gönderme; araç kimliği ve belgeyi zincir dışında bırakma.
+- Searching a fictional vehicle history by VIN and viewing records in chronological order.
+- Showing a sample field discrepancy between records from different sources.
+- Public vehicle search, institution login, an AutoTrace application approval queue, and role-controlled report submission.
+- Storing approved-institution reports in local SQLite or, on Vercel, persistent Neon Postgres; searchable by VIN after server verification of the Solana proof.
+- A custom Anchor/Rust program deployed to Devnet. The program account is executable in Explorer; its deployment signature and address are in the README.
+- Writing only a SHA-256 digest, application identifier, and version on-chain while keeping vehicle identifiers and report contents off-chain.
 
-## Olmayanlar ve doğru çerçeve
+The production health endpoint has been verified to return `mode: "vercel-postgres"` and `chainRequired: true`. A report submission still needs to be demonstrated end to end with an institution account, a Phantom-approved Devnet transaction, backend verification, and a subsequent VIN lookup.
 
-- Gerçek sigorta şirketi, ekspertiz kuruluşu, servis, SBM/kamu veri kaynağı veya gerçek araç kaydı entegrasyonu yoktur.
-- Kurum profili gerçek tüzel kişiyi doğrulamaz; demo verisi güvenilir kurum imzası değildir.
-- Vercel için kalıcı Postgres API'si hazırdır; ancak Neon bağlantısı ve yönetici ortam değişkenleri projeye bağlanmadan çevrimiçi rapor akışı aktif olmaz. Bu, gerçek kurum verilerine bağlı bir araç sicili değildir.
-- Demo kurum ve kullanıcı onayı gerçek tüzel kişiyi veya kullanıcı kimliğini doğrulamaz. Demo hesapları ortak örnek hesaplarıdır.
-- SHA-256/Blockchain, kayıtlanan belgenin sonradan değişmesini gösterebilir; ilk bilginin doğruluğunu veya aracın gerçek fiziksel durumunu ispatlamaz.
-- Hackathon paneli önceki sürümde Memo kullanımını görüyordu. Artık özgün Anchor programı Devnet'te çalışır durumda; jüri demosunda `anchor_report` çağrısını da bir raporla çalıştırıp Explorer işlem kanıtını göster.
-- Bu nedenle ürün sunumunda “aracın tüm gerçek geçmişini bugün gösteriyor” deme. “Yetkili katılımcıların kayıtlarını bütünlüğü doğrulanabilir biçimde ilişkilendirmeyi hedefleyen prototip” de.
+## What the prototype does not do
 
-## Üretim sisteminde kritik işler
+- It is not connected to real insurers, inspection firms, repair shops, SBM or public data sources, or real vehicle records.
+- Institution profiles do not verify a real legal entity. Sample data is not a trusted institutional signature.
+- The demo administrator approves accounts, but this does not verify a real person's or company's identity. Sample accounts are shared fictional accounts.
+- SHA-256 and blockchain can reveal whether an anchored document has changed later; they cannot establish that the original information was truthful or prove a vehicle's physical condition.
+- The wallet that calls the program is not independently verified as an institution wallet.
 
-1. Kurum katılımını ve yetkili imza anahtarlarını doğrulamak.
-2. Sigorta/ekspertiz/servis verisinin yasal erişim koşullarını ve rıza modelini kurmak.
-3. VIN ve raporların zincir dışı, şifreli saklanmasını; sorguda erişim yetkisini tasarlamak.
-4. Kurumun imzaladığı standartlaştırılmış kayıt şeması ve anahtar iptal/devir akışı oluşturmak.
-5. Tekrarlanan, hatalı veya birbiriyle çelişen bildirimleri kaynak ve güven seviyesiyle sunmak.
-6. Kişisel verilerin korunması, veri saklama süreleri ve denetim kayıtları için uzman görüşü almak.
+Do not present AutoTrace as already showing a vehicle's complete real-world history. Describe it as a prototype for linking authorized submissions with verifiable integrity proofs.
 
-## Hackathon katkılarının kaydı
+## Production work still required
 
-Etkinlik öncesi prototipin mevcut olduğunu açıkla. Sprint başladıktan sonra tarih/saat, ekip üyesi, yeni kod/değişiklik, test kanıtı ve bağlantıyı ayrı kaydet. Önceden üretilmiş UI veya Devnet işlemini etkinlik içi katkı gibi göstermeyin.
+1. Verify institution membership and authorized signing keys.
+2. Establish lawful data access and a consent model for insurance, inspection, and service records.
+3. Keep VINs and reports encrypted off-chain and design access controls for search.
+4. Define a standardized record schema signed by each institution, including key revocation and rotation.
+5. Present duplicate, invalid, and conflicting submissions with their sources and trust levels.
+6. Get expert guidance on personal-data protection, retention periods, and audit logs.
+
+## Tracking hackathon contributions
+
+Disclose that the prototype existed before the event. Once the sprint starts, separately record the date and time, contributor, new code or changes, test evidence, and links. Do not describe pre-event UI or Devnet transactions as work completed during the hackathon.

@@ -1,59 +1,76 @@
-# AutoTrace — araç geçmişi güven prototipi
+# AutoTrace — Verifiable Vehicle History
 
-AutoTrace, kaza, sigorta, ekspertiz ve servis kayıtlarını araç geçmişi akışında göstermeyi; kayıtların hangi örnek kurumdan geldiğini ve içerik özetinin Solana Devnet'te sabitlenip sabitlenmediğini incelemeyi amaçlar.
+AutoTrace is a prototype for bringing accident, insurance, inspection, and repair records together in a vehicle history. It helps a reviewer see who submitted each record and whether its content hash has been anchored to Solana Devnet.
 
-## Kurum yetkilendirme demosu
+## Live project
 
-- Araç araması herkese açıktır. Yeni bir VIN sorgulandığında yalnızca o VIN'e ait kayıtlar API'den döner.
-- Rapor gönderimi sunucu tarafında oturum ve kurum durumu kontrolünden geçer. Giriş yapmayan veya AutoTrace onayı bulunmayan kullanıcı `/api/records` üzerinden kayıt ekleyemez.
-- Kurum başvurusu otomatik yetki vermez. Başvuruyu AutoTrace demo yöneticisi onayladıktan sonra kullanıcı ve kurum etkinleştirilir.
-- Kurum tipleri kayıt türlerini sınırlar: sigorta kaza/hasar kaydı; ekspertiz ekspertiz raporu; servis onarım ve kilometre kaydı gönderebilir.
-- Tüm kurumlar, kullanıcılar ve başvurular sentetiktir. Gerçek kişi/kurum bilgisi girmeyin.
+- **Website:** [autotrace-alpha.vercel.app](https://autotrace-alpha.vercel.app/)
+- **GitHub:** [Gamzeysrr/autotrace](https://github.com/Gamzeysrr/autotrace)
+- **Solana program:** [DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV on Devnet](https://explorer.solana.com/address/DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV?cluster=devnet)
+- **Program deployment transaction:** [View on Solana Explorer](https://explorer.solana.com/tx/5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2?cluster=devnet)
+- **Backend status:** The production API is connected to Neon Postgres. Visit [`/api/health`](https://autotrace-alpha.vercel.app/api/health) and look for `mode: "vercel-postgres"` and `chainRequired: true`.
 
-## Yerel demo kurulumu
+## What the prototype demonstrates
 
-Node.js 22.15 veya üzeri gerekir. Bağımlılık yüklemeden `AutoTrace-Open.bat` dosyasına çift tıklayın. Sunucu `http://127.0.0.1:4177/` adresinde başlar ve SQLite veritabanını `data/autotrace.sqlite` içinde tutar. Başlatıcı Node.js'e Windows sistem sertifika deposunu da kullandırır; böylece Devnet RPC TLS doğrulaması yapılabilir.
+- Anyone can search a 17-character VIN. The API returns records for the requested VIN only.
+- Submitting a report requires an authenticated, approved institution account. A pending application does not grant write access.
+- An AutoTrace administrator reviews institution applications before the account is activated.
+- Institution roles restrict report types: insurers can submit accident and claim records, inspection firms can submit inspection reports, and service centers can submit repair and mileage records.
+- The report content stays in the database. The app asks Phantom to sign a transaction that stores a salted SHA-256 digest and a record identifier in the custom Solana program. The backend verifies the transaction before making the record searchable.
+- The hosted app uses Neon Postgres for persistent data. The local app uses SQLite.
 
-### Sentetik demo hesapları
+All included institutions, accounts, and vehicle scenarios are fictional. The prototype is not connected to real insurers, inspection centers, repair shops, government databases, or vehicle records. Do not enter real personal or company information.
 
-| Kullanıcı | E-posta | Şifre |
+## Run the local demo
+
+Node.js 22.15 or later is required. On Windows, double-click `AutoTrace-Open.bat`; no dependency installation is needed. The server starts at `http://127.0.0.1:4177/` and stores its SQLite database at `data/autotrace.sqlite`. The launcher configures Node.js to use the Windows certificate store so TLS verification works with Solana Devnet RPC.
+
+### Fictional institution accounts
+
+| Sample institution | Login email | Password |
 |---|---|---|
-| Örnek Ufuk Sigorta | `sigorta@ufuk-sigorta.test` | `UfukDemo2026!` |
-| Örnek Mercek Ekspertiz | `ekspertiz@mercek-ekspertiz.test` | `MercekDemo2026!` |
-| Örnek Rota Servis Merkezi | `servis@rota-otomotiv.test` | `RotaDemo2026!` |
+| Horizon Insurance (sample) | `sigorta@ufuk-sigorta.test` | `UfukDemo2026!` |
+| Clearview Vehicle Inspection (sample) | `ekspertiz@mercek-ekspertiz.test` | `MercekDemo2026!` |
+| Northstar Service Center (sample) | `servis@rota-otomotiv.test` | `RotaDemo2026!` |
 
-Giriş ekranındaki hazır kurum hesabı düğmeleri alanları doldurur. AutoTrace yönetici hesabı bu bilgisayarda yerel olarak yapılandırılır; kaynak dosyalara ve paketlere eklenmez. Yeni başvuru akışında yöneticiyle giriş yapıp başvuruyu onayladıktan sonra başvuru sahibi kendi bilgileriyle giriş yapıp kayıt gönderebilir.
+The preset account buttons fill in the sample institution credentials. The AutoTrace administrator account is configured locally and is not included in source files or packages. To try the application flow, sign in as the administrator, approve a submitted institution application, then sign in with that applicant's account and submit a report.
 
-## Örnek araç senaryoları
+## Sample vehicle scenarios
 
-- Ön hasar: `ATQ23A1B000000001`
-- Dolu hasarı: `ATQ24C2D000000002`
-- Arka hasar: `ATQ20E3F000000003`
+- Front-end damage: `ATQ23A1B000000001`
+- Hail damage: `ATQ24C2D000000002`
+- Rear damage: `ATQ20E3F000000003`
 
-Bu kodlar gerçek VIN değildir; yalnızca ürün akışını göstermek için hazırlanmış sentetik senaryolardır.
+These are scenario identifiers, not real VINs. The records are fictional and exist only to demonstrate the product flow.
 
-## AutoTrace Solana programı
+## AutoTrace Solana program
 
-AutoTrace'a özgü Anchor programı [`programs/autotrace_registry/src/lib.rs`](programs/autotrace_registry/src/lib.rs) içinde bulunur. `anchor_report` instruction'ı her rapor için yeni PDA oluşturur; PDA'ya imzalayan cüzdanı, rastgele kayıt kimliğini, tuzlanmış SHA-256 özetini ve zamanı yazar. Programda mevcut PDA'yı değiştiren bir instruction yoktur; aynı cüzdan aynı kayıt kimliğini ikinci kez yazamaz. VIN, plaka, rapor numarası, rapor içeriği veya PDF zincire gönderilmez.
+The custom Anchor program is in [`programs/autotrace_registry/src/lib.rs`](programs/autotrace_registry/src/lib.rs). Its `anchor_report` instruction creates a new PDA for each report and records the signing wallet, a random record identifier, a salted SHA-256 digest, and a timestamp. The program has no instruction that modifies an existing PDA, and the same wallet cannot write the same record identifier twice. VINs, license plates, report numbers, report contents, and PDFs are never sent to the blockchain.
 
-Program adresi: [`DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV`](https://explorer.solana.com/address/DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV?cluster=devnet). Devnet dağıtım işlemi: [`5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2`](https://explorer.solana.com/tx/5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2?cluster=devnet). Explorer program hesabını Devnet'te `Executable: Yes` ve `Upgradeable: Yes` olarak gösteriyor. Adres `Anchor.toml`, `server.js`, Vercel API'si ve tarayıcı tarafından kullanılır. Sunucu, Devnet `getTransaction` RPC çağrısıyla başarılı işlemi, program kimliğini, Anchor instruction verisini, kayıt kimliğini ve hash'i doğrulamadan kaydı yayımlamaz.
+The program was built in Solana Playground and deployed to Devnet. The server verifies the successful Devnet transaction, program ID, Anchor instruction data, record ID, and hash through `getTransaction` before publishing a report. Compiling, deploying, and verifying a program are separate steps. A deployed program alone does not prove that a report was recorded.
 
-Program Solana Playground'da derlenip Devnet'e dağıtılmıştır. Anchor projesi [Solana Playground](https://beta.solpg.io/) içinde veya Anchor CLI/WSL kurulu ortamda açılabilir. Windows'ta resmi Anchor kurulumu WSL gerektirir. Özel anahtar veya seed phrase'i depoya, sohbete ya da doğrulama paketine koyma.
+The project can be opened in [Solana Playground](https://beta.solpg.io/) or in an environment with Anchor CLI and WSL installed. The official Anchor setup on Windows requires WSL. Never put a private key or seed phrase in this repository, chat, or a verification package.
 
-Rapor doğrulama paketi zincir dışında tutulan VIN ve rapor alanlarını içerebilir; yalnızca paylaşım izni olan kişiye gönderin. Programı derlemek, dağıtım ve zincirde doğrulama anlamına gelmez; bu üç adım birbirinden ayrıdır.
+A report verification package may contain the VIN and report fields that are kept off-chain. Share it only with an authorized recipient.
 
-## Vercel ve kalıcı veritabanı
+## Vercel and persistent storage
 
-Vercel için `/api/*` uç noktaları `api/[...path].js` üzerinden çalışır ve ortak, kalıcı veritabanı olarak Postgres kullanır. Sunucu SQLite dosyasına Vercel üzerinde yazmaya çalışmaz. Yerel bilgisayardaki `server.js` SQLite ile çalışmaya devam eder.
+The production `/api/*` endpoints run through `api/[...path].js` and use Neon Postgres. The local `server.js` backend continues to use SQLite. The Vercel project is connected to a Neon Free database, and the production health endpoint currently reports `mode: "vercel-postgres"`.
 
-1. Vercel’de projeye **Storage → Marketplace Storage → Neon Postgres** entegrasyonunu bağla. Vercel bağlantı bilgilerini `DATABASE_URL` olarak ekler. Marketplace depolama sağlayıcısını ve olası ücretleri Vercel hesabından yönetir; plandaki ücretleri kontrol et.
-2. Vercel Project Settings → Environment Variables bölümüne `AUTOTRACE_ADMIN_EMAIL` ve `AUTOTRACE_ADMIN_PASSWORD` ekle. Bunlar yalnızca sunucu ortamında tutulmalı; GitHub’a veya tarayıcıya yazılmamalı. Yönetici ilk API çağrısında oluşturulur. Parola sonradan değiştirilirse mevcut hesap otomatik değişmez.
-3. `main` dalını yeniden dağıt. `/api/health` yanıtında `mode: "vercel-postgres"` görünmesi veritabanının bağlandığını gösterir.
+For a new deployment:
 
-Postgres tabloları ilk API çağrısında oluşturulur. Demo kurum hesapları sentetik olarak eklenir; kurum başvuruları, onay durumu, oturumlar ve Solana doğrulamalı raporlar kalıcı Postgres tablolarında tutulur. Yerel admin ayarı ve `data/` klasörü depoya gönderilmez. Gerekli değişkenler `.env.example` içinde listelenmiştir.
+1. Connect a Neon Postgres database to the Vercel project. The integration supplies `DATABASE_URL`.
+2. Add `AUTOTRACE_ADMIN_EMAIL` and `AUTOTRACE_ADMIN_PASSWORD` under Vercel Project Settings → Environment Variables. Keep these values in the server environment only; never commit them or expose them in browser code. The administrator account is created on the first API request. Changing the environment password later does not automatically change an existing account.
+3. Redeploy the project after changing environment variables. The `/api/health` response should include `mode: "vercel-postgres"`.
 
-Bu, gerçek kurumlara bağlı ticari bir araç sicili değildir. Kurum doğrulaması admin onayıyla sınırlıdır; örnek şirket hesapları sentetiktir. Program PDA'sı içeriğin sonradan değişmediğine kanıt verir, raporun ilk günden doğru olduğunu kanıtlamaz. Programı çağıran cüzdanın gerçek kurum kimliği ayrıca doğrulanmaz. Üretim için gerçek kurum kimliği ve e-posta doğrulaması, kurum cüzdanlarının allowlist'e alınması, veri gizliliği/erişim politikaları ve yedekleme gerekir.
+The API creates the Postgres tables on its first request. It seeds fictional institution accounts when the institutions table is empty. Applications, approvals, sessions, and reports whose Solana proofs have been verified are stored in Postgres. The local administrator configuration and `data/` directory are not committed. Required variable names are listed in `.env.example`.
 
-## Teknik
+## Scope and limitations
 
-Ön yüz tek HTML/CSS/JavaScript uygulamasıdır. Yerel backend Node.js `http`, `crypto` ve `node:sqlite` kullanır; Vercel backend'i Node.js serverless function ve `@neondatabase/serverless` ile Postgres kullanır. Oturum çerezi HttpOnly/SameSite, parolalar scrypt hash olarak tutulur. Veritabanı kimlik bilgileri ortam değişkenlerindedir.
+AutoTrace is not a commercial vehicle registry and is not connected to real institutions. Institution access is approved by the prototype administrator; sample accounts do not establish a real person's or legal entity's identity. A PDA proves that the anchored content hash has not changed since it was recorded. It does not prove that the original report was truthful or that the vehicle had a particular physical condition. The wallet that submits a program instruction is not independently verified as belonging to an institution.
+
+A production system would need verified institution identities and email addresses, allowlisted institution wallets, privacy and access-control policies, backups, lawful data access, and a consent model for VIN lookup. Vehicle and report data should remain off-chain and access-controlled.
+
+## Technical overview
+
+The frontend is a single HTML/CSS/JavaScript application. The local backend uses Node.js `http`, `crypto`, and `node:sqlite`; the Vercel serverless backend uses Node.js and `@neondatabase/serverless` with Postgres. Session cookies are `HttpOnly` and `SameSite`; passwords are stored as scrypt hashes. Database credentials are supplied through environment variables.

@@ -65,6 +65,17 @@ async function ensureAdmin() {
     [id(),process.env.AUTOTRACE_ADMIN_EMAIL.trim().toLowerCase(),pw.salt,pw.hash,now()]);
 }
 
+
+async function ensureDemoReviewer() {
+  const email='reviewer@autotrace.test';
+  const existing=await pool.query('SELECT id FROM users WHERE email=$1',[email]);
+  if(existing.rowCount)return;
+  const pw=makePassword('AutoTraceReview2026!');
+  await pool.query(`INSERT INTO users(id,institution_id,name,email,password_salt,password_hash,role,status,created_at)
+    VALUES($1,NULL,'AutoTrace Demo Reviewer',$2,$3,$4,'admin','approved',$5) ON CONFLICT(email) DO NOTHING`,
+    [id(),email,pw.salt,pw.hash,now()]);
+}
+
 function json(res,status,data,headers={}) {
   res.statusCode=status; res.setHeader('Content-Type','application/json; charset=utf-8');
   res.setHeader('Cache-Control','no-store'); for (const [key,value] of Object.entries(headers)) res.setHeader(key,value);
@@ -108,6 +119,7 @@ module.exports = async function handler(req,res) {
     if (!process.env.DATABASE_URL) return json(res,503,{error:'Persistent database is unavailable. Connect Postgres in Vercel and redeploy.'});
     await initialize();
     await ensureAdmin();
+    await ensureDemoReviewer();
     const p=new URL(req.url,`https://${req.headers.host||'localhost'}`).pathname.replace(/\/$/,'')||'/';
     if (req.method!=='GET'&&req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host) return json(res,403,{error:'This origin is not allowed.'});
     if(p==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,mode:'vercel-postgres',chainRequired:true,chainProgram:AUTOTRACE_PROGRAM_ID,chainNetwork:'devnet',version:'autotrace-program-v1'});

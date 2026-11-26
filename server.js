@@ -106,6 +106,8 @@ if (!db.prepare('SELECT 1 FROM institutions LIMIT 1').get()) {
   seedUser('servis@rota-otomotiv.test', 'RotaDemo2026!', 'Örnek Servis Yetkilisi', 'issuer', orgs[2][0]);
 }
 ensureAdminAccount();
+// Public jury credentials are separate from the owner's private administrator account.
+seedUser('reviewer@autotrace.test', 'AutoTraceReview2026!', 'AutoTrace Demo Reviewer', 'admin');
 
 const mime = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png', '.jpg':'image/jpeg', '.webp':'image/webp', '.ico':'image/x-icon' };
 function send(res, status, data, headers = {}) {

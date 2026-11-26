@@ -27,6 +27,14 @@ Node.js 22.15 or later is required. On Windows, double-click `AutoTrace-Open.bat
 
 ### Fictional institution accounts
 
+**AutoTrace Demo Reviewer (public jury account)**
+
+- Email: `reviewer@autotrace.test`
+- Password: `AutoTraceReview2026!`
+
+Use this account to review and approve fictional institution applications. The owner's private administrator account remains separate and is not published.
+
+
 Each credential is listed separately so visitors can copy and paste it into the sign-in form.
 
 **Horizon Insurance (sample)**
@@ -44,7 +52,7 @@ Each credential is listed separately so visitors can copy and paste it into the 
 - Email: `servis@rota-otomotiv.test`
 - Password: `RotaDemo2026!`
 
-The preset account buttons fill in the sample institution credentials. The AutoTrace administrator account is configured locally and is not included in source files or packages. To try the application flow, sign in as the administrator, approve a submitted institution application, then sign in with that applicant's account and submit a report.
+The **Fill sign-in form** buttons enter the selected public demo credentials. To try the application flow, sign in with the public Demo Reviewer account, approve a fictional institution application, then sign in with the applicant's account and submit a report. The owner's private administrator credentials are kept separate and are not included in source files or packages.
 
 ## Sample vehicle scenarios
 

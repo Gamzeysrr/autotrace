@@ -1,103 +1,131 @@
 # AutoTrace — Verifiable Vehicle History
 
-AutoTrace is a prototype for bringing accident, insurance, inspection, and repair records together in a vehicle history. It helps a reviewer see who submitted each record and whether its content hash has been anchored to Solana Devnet.
+**AutoTrace helps a used-car buyer check where a vehicle-history report came from and whether its contents still match a tamper-evident proof.**
 
-## Live project
+A buyer may find an inspection PDF in a listing, but the document alone does not make its issuer or revision history independently verifiable. Accident, insurance, inspection, and repair records also live in separate places. AutoTrace demonstrates a shared vehicle-history workflow where institutions submit sourced records and a Solana proof makes later changes detectable.
+
+## Why would anyone use AutoTrace?
+
+### For used-car buyers
+
+Search by VIN, review the available records in chronological order, and see each record's source and date. Where a Solana proof exists, compare the report's digest with the on-chain record. This gives the buyer a clearer basis for asking questions before purchase.
+
+### For inspection firms
+
+Attach a verification link or QR code to an inspection report. A customer can check that the report matches the digest recorded at a particular time. This may help an inspection firm differentiate its service through traceability and give it an audit trail when a report's integrity is disputed.
+
+### For insurers
+
+Anchor the digest and timestamp of an accident or claim record so its integrity can be checked later. If multiple parties refer to the same record, they can independently check whether the content changed after the proof was created.
+
+### For repair shops and service centers
+
+Create a traceable record of repairs and part replacements. A vehicle owner can share that service history with a future buyer, while the shop can show which work it recorded.
+
+These are product hypotheses, not proven savings or guaranteed commercial outcomes. A real pilot must measure whether traceability improves customer trust, reduces time spent resolving document disputes, or helps institutions win or retain business.
+
+## Initial go-to-market hypothesis
+
+Start with one inspection firm rather than trying to onboard the entire vehicle ecosystem at once:
+
+1. The firm creates a report and gives the customer an AutoTrace verification link or QR code.
+2. The vehicle owner shares that link with prospective buyers.
+3. The buyer checks the source, timestamp, and matching proof.
+4. The pilot measures report-submission effort, verification-link visits, buyer feedback, and the firm's willingness to keep using the workflow.
+
+If that small pilot shows value, add repair and insurance records through integrations with the institutions' existing systems. A possible business model is a SaaS subscription or API for issuing and verifying reports; pricing and willingness to pay still need validation with institutions.
+
+## How the prototype works
+
+1. Anyone can search a VIN without signing in.
+2. An institution applies for an account.
+3. An AutoTrace administrator reviews and approves the application.
+4. The approved account can submit only the report types allowed for its institution role.
+5. The report draft is hashed. Phantom asks the user to sign a transaction calling the AutoTrace Solana program on Devnet.
+6. The server verifies the transaction signature, program ID, record ID, and digest. Only then does it save the report in the database and make it available in VIN search.
+
+## What Solana does
+
+AutoTrace includes a custom Anchor/Rust program deployed to Solana Devnet. Its `anchor_report` instruction creates a Program Derived Address (PDA) for each report, derived from the issuer wallet and a random 16-byte record ID. The PDA stores:
+
+- The signing wallet address
+- The record ID
+- A 32-byte SHA-256 digest of the report proof data
+- The Solana timestamp
+
+The report digest is salted before submission. VINs, license plates, report numbers, report text, and PDFs are kept off-chain. The program initializes a new PDA for each issuer and record ID; it has no instruction to edit an existing proof. The backend independently checks the successful Devnet transaction and its instruction data before publishing the corresponding report.
+
+### Why use a blockchain instead of only a database?
+
+A database is needed to store and retrieve the reports, but one database operator can change database contents. A Solana proof provides an independently inspectable, tamper-evident reference that multiple parties can check without relying only on AutoTrace's database history. In this MVP, Neon Postgres stores the report; Solana stores its integrity proof.
+
+A hash does **not** prove that a report was truthful when it was created. It proves only that the checked content matches the digest recorded on-chain. A wallet signature identifies a wallet; this prototype does not independently prove that the wallet belongs to a real insurance, inspection, or service company.
+
+## Live demo
 
 - **Website:** [autotrace-alpha.vercel.app](https://autotrace-alpha.vercel.app/)
 - **GitHub:** [Gamzeysrr/autotrace](https://github.com/Gamzeysrr/autotrace)
-- **Solana program:** [DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV on Devnet](https://explorer.solana.com/address/DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV?cluster=devnet)
-- **Program deployment transaction:** [View on Solana Explorer](https://explorer.solana.com/tx/5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2?cluster=devnet)
-- **Backend status:** The production API is connected to Neon Postgres. Visit [`/api/health`](https://autotrace-alpha.vercel.app/api/health) and look for `mode: "vercel-postgres"` and `chainRequired: true`.
+- **Solana program:** [View the AutoTrace program on Devnet Explorer](https://explorer.solana.com/address/DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV?cluster=devnet)
+- **Deployment transaction:** [View on Solana Explorer](https://explorer.solana.com/tx/5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2?cluster=devnet)
+- **Backend health:** [Check the production API](https://autotrace-alpha.vercel.app/api/health). A healthy response currently reports `mode: "vercel-postgres"` and `chainRequired: true`.
 
-## What the prototype demonstrates
+### Try the demo
 
-- Anyone can search a 17-character VIN. The API returns records for the requested VIN only.
-- Submitting a report requires an authenticated, approved institution account. A pending application does not grant write access.
-- An AutoTrace administrator reviews institution applications before the account is activated.
-- Institution roles restrict report types: insurers can submit accident and claim records, inspection firms can submit inspection reports, and service centers can submit repair and mileage records.
-- The report content stays in the database. The app asks Phantom to sign a transaction that stores a salted SHA-256 digest and a record identifier in the custom Solana program. The backend verifies the transaction before making the record searchable.
-- The hosted app uses Neon Postgres for persistent data. The local app uses SQLite.
-
-All included institutions, accounts, and vehicle scenarios are fictional. The prototype is not connected to real insurers, inspection centers, repair shops, government databases, or vehicle records. Do not enter real personal or company information.
-
-## Run the local demo
-
-Node.js 22.15 or later is required. On Windows, double-click `AutoTrace-Open.bat`; no dependency installation is needed. The server starts at `http://127.0.0.1:4177/` and stores its SQLite database at `data/autotrace.sqlite`. The launcher configures Node.js to use the Windows certificate store so TLS verification works with Solana Devnet RPC.
-
-### Fictional institution accounts
-
-**AutoTrace Demo Reviewer (public jury account)**
+**Public reviewer account** — use this to review and approve fictional institution applications:
 
 - Email: `reviewer@autotrace.test`
 - Password: `AutoTraceReview2026!`
 
-Use this account to review and approve fictional institution applications. The owner's private administrator account remains separate and is not published.
+**Sample institution accounts** — use these to view the institution submission flow:
 
+- Insurance — `sigorta@ufuk-sigorta.test` / `UfukDemo2026!`
+- Vehicle inspection — `ekspertiz@mercek-ekspertiz.test` / `MercekDemo2026!`
+- Service center — `servis@rota-otomotiv.test` / `RotaDemo2026!`
 
-Each credential is listed separately so visitors can copy and paste it into the sign-in form.
+The application review queue contains three fictional pending requests:
 
-**Horizon Insurance (sample)**
+- Blue Harbor Insurance — `claims@blueharbor-insurance.test`
+- Clearview Inspection Group — `applications@clearview-inspection.test`
+- Cedar Motor Works — `intake@cedar-motorworks.test`
 
-- Email: `sigorta@ufuk-sigorta.test`
-- Password: `UfukDemo2026!`
+If one is approved, its new demo account password is `SampleApproval2026!`. The owner's private administrator account is separate and is not published.
 
-**Clearview Vehicle Inspection (sample)**
-
-- Email: `ekspertiz@mercek-ekspertiz.test`
-- Password: `MercekDemo2026!`
-
-**Northstar Service Center (sample)**
-
-- Email: `servis@rota-otomotiv.test`
-- Password: `RotaDemo2026!`
-
-**Seeded sample applications (pending review)**
-
-- Blue Harbor Insurance (sample) — `claims@blueharbor-insurance.test`
-- Clearview Inspection Group (sample) — `applications@clearview-inspection.test`
-- Cedar Motor Works (sample) — `intake@cedar-motorworks.test`
-
-These fictional requests appear in Application Review and are marked as sample requests. If approved, each created demo user uses `SampleApproval2026!` as its password.
-
-The **Fill sign-in form** buttons enter the selected public demo credentials. To try the application flow, sign in with the public Demo Reviewer account, approve a fictional institution application, then sign in with the applicant's account and submit a report. The owner's private administrator credentials are kept separate and are not included in source files or packages.
-
-## Sample vehicle scenarios
+### Sample vehicle scenarios
 
 - Front-end damage: `ATQ23A1B000000001`
 - Hail damage: `ATQ24C2D000000002`
 - Rear damage: `ATQ20E3F000000003`
 
-These are scenario identifiers, not real VINs. The records are fictional and exist only to demonstrate the product flow.
+These are fictional scenario codes for exploring the interface. They are not real VINs or real vehicle histories.
 
-## AutoTrace Solana program
+## What's implemented in this MVP
 
-The custom Anchor program is in [`programs/autotrace_registry/src/lib.rs`](programs/autotrace_registry/src/lib.rs). Its `anchor_report` instruction creates a new PDA for each report and records the signing wallet, a random record identifier, a salted SHA-256 digest, and a timestamp. The program has no instruction that modifies an existing PDA, and the same wallet cannot write the same record identifier twice. VINs, license plates, report numbers, report contents, and PDFs are never sent to the blockchain.
-
-The program was built in Solana Playground and deployed to Devnet. The server verifies the successful Devnet transaction, program ID, Anchor instruction data, record ID, and hash through `getTransaction` before publishing a report. Compiling, deploying, and verifying a program are separate steps. A deployed program alone does not prove that a report was recorded.
-
-The project can be opened in [Solana Playground](https://beta.solpg.io/) or in an environment with Anchor CLI and WSL installed. The official Anchor setup on Windows requires WSL. Never put a private key or seed phrase in this repository, chat, or a verification package.
-
-A report verification package may contain the VIN and report fields that are kept off-chain. Share it only with an authorized recipient.
-
-## Vercel and persistent storage
-
-The production `/api/*` endpoints run through `api/[...path].js` and use Neon Postgres. The local `server.js` backend continues to use SQLite. The Vercel project is connected to a Neon Free database, and the production health endpoint currently reports `mode: "vercel-postgres"`.
-
-For a new deployment:
-
-1. Connect a Neon Postgres database to the Vercel project. The integration supplies `DATABASE_URL`.
-2. Add `AUTOTRACE_ADMIN_EMAIL` and `AUTOTRACE_ADMIN_PASSWORD` under Vercel Project Settings → Environment Variables. Keep these values in the server environment only; never commit them or expose them in browser code. The administrator account is created on the first API request. Changing the environment password later does not automatically change an existing account.
-3. Redeploy the project after changing environment variables. The `/api/health` response should include `mode: "vercel-postgres"`.
-
-The API creates the Postgres tables on its first request. It seeds fictional institution accounts when the institutions table is empty. Applications, approvals, sessions, and reports whose Solana proofs have been verified are stored in Postgres. The local administrator configuration and `data/` directory are not committed. Required variable names are listed in `.env.example`.
+- Public VIN search and a chronological vehicle-history timeline
+- Institution applications, administrator approval, and role-restricted report types
+- A public demo reviewer account and fictional pending applications for the jury walkthrough
+- Required Phantom approval for a report's Solana Devnet proof
+- Server-side verification of the Devnet transaction before report publication
+- Neon Postgres persistence on Vercel and SQLite for the local demo
+- Independent verification of an exported AutoTrace proof package
 
 ## Scope and limitations
 
-AutoTrace is not a commercial vehicle registry and is not connected to real institutions. Institution access is approved by the prototype administrator; sample accounts do not establish a real person's or legal entity's identity. A PDA proves that the anchored content hash has not changed since it was recorded. It does not prove that the original report was truthful or that the vehicle had a particular physical condition. The wallet that submits a program instruction is not independently verified as belonging to an institution.
+All included institutions, people, applications, and vehicle scenarios are fictional. AutoTrace is not connected to real insurers, inspection firms, repair shops, government databases, or real vehicle records. Do not enter real personal or company information.
 
-A production system would need verified institution identities and email addresses, allowlisted institution wallets, privacy and access-control policies, backups, lawful data access, and a consent model for VIN lookup. Vehicle and report data should remain off-chain and access-controlled.
+The current institution approval is a prototype administrator workflow, not legal-entity verification. The system does not yet integrate with insurers' or inspection firms' existing systems, verify an institution's real-world wallet, or establish the truth of a report. VIN access in a real service would need lawful data access, vehicle-owner consent, privacy controls, and an institution identity and authorization model. The current network is Devnet, not Solana Mainnet.
+
+A production pilot would need verified institutional identities and wallets, secure integrations, consent and access policies, backups, monitoring, a process for appending corrections, and a security review of the on-chain program and backend.
+
+## Run the local demo
+
+Node.js 22.15 or later is required. On Windows, launch `AutoTrace-Open.bat`. The app opens at `http://127.0.0.1:4177/` and uses SQLite at `data/autotrace.sqlite`. The launcher configures Node.js to use the Windows certificate store for Solana Devnet RPC connections.
 
 ## Technical overview
 
-The frontend is a single HTML/CSS/JavaScript application. The local backend uses Node.js `http`, `crypto`, and `node:sqlite`; the Vercel serverless backend uses Node.js and `@neondatabase/serverless` with Postgres. Session cookies are `HttpOnly` and `SameSite`; passwords are stored as scrypt hashes. Database credentials are supplied through environment variables.
+- **Frontend:** single-page HTML, CSS, and JavaScript application
+- **Local backend:** Node.js HTTP server, SQLite, and Node.js crypto
+- **Hosted backend:** Vercel Functions and Neon Postgres via `@neondatabase/serverless`
+- **On-chain program:** Anchor/Rust program on Solana Devnet
+- **Authentication:** HttpOnly, SameSite session cookies and scrypt password hashes
+
+Database and administrator settings are supplied through server-side environment variables. Never commit private keys, seed phrases, database URLs, or the owner's administrator password.

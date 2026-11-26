@@ -1,5 +1,8 @@
 {
   "functions": {
-    "api/[...path].js": { "maxDuration": 30 }
+    "api/[...path].js": { "maxDuration": 30 },
+    "api/admin/applications.js": { "maxDuration": 30 },
+    "api/admin/applications/[applicationId]/approve.js": { "maxDuration": 30 },
+    "api/records/[recordId].js": { "maxDuration": 30 }
   }
 }

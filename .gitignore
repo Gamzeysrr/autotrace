@@ -6,5 +6,9 @@ Thumbs.db
 *.zip
 /node_modules/
 /.vercel/
+/target/
+/.anchor/
+/test-ledger/
+*.keypair.json
 
 /data/

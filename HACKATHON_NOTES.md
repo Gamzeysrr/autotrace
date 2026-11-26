@@ -12,7 +12,7 @@
 - Farklı kaynaklardaki kayıtlar arasında örnek alan çelişkisini görünür kılma.
 - Public araç araması yanında kurum girişi, AutoTrace demo onay kuyruğu ve rol kontrollü rapor oluşturma.
 - Onaylı kurum hesabıyla gönderilen Solana doğrulamalı kaydı yerel SQLite'ta veya Vercel'e bağlı Neon Postgres'te saklayıp VIN aramasından gösterme.
-- Raporu yayımlamadan önce hash'ini Solana Devnet Memo işlemine Phantom ile yazma; sunucu işlem imzasını ve Memo içeriğini RPC'den doğrular.
+- AutoTrace'a özgü Anchor/Rust programı Devnet'e dağıtıldı; Explorer program hesabını çalıştırılabilir olarak gösteriyor. Dağıtım imzası ve program adresi README'de yer alıyor. Rapor ekleme talimatının ayrıca örnek bir kayıtla uçtan uca denenmesi gerekiyor.
 - Zincire yalnızca SHA-256 özeti, uygulama etiketi ve sürüm gönderme; araç kimliği ve belgeyi zincir dışında bırakma.
 
 ## Olmayanlar ve doğru çerçeve
@@ -22,6 +22,7 @@
 - Vercel için kalıcı Postgres API'si hazırdır; ancak Neon bağlantısı ve yönetici ortam değişkenleri projeye bağlanmadan çevrimiçi rapor akışı aktif olmaz. Bu, gerçek kurum verilerine bağlı bir araç sicili değildir.
 - Demo kurum ve kullanıcı onayı gerçek tüzel kişiyi veya kullanıcı kimliğini doğrulamaz. Demo hesapları ortak örnek hesaplarıdır.
 - SHA-256/Blockchain, kayıtlanan belgenin sonradan değişmesini gösterebilir; ilk bilginin doğruluğunu veya aracın gerçek fiziksel durumunu ispatlamaz.
+- Hackathon paneli önceki sürümde Memo kullanımını görüyordu. Artık özgün Anchor programı Devnet'te çalışır durumda; jüri demosunda `anchor_report` çağrısını da bir raporla çalıştırıp Explorer işlem kanıtını göster.
 - Bu nedenle ürün sunumunda “aracın tüm gerçek geçmişini bugün gösteriyor” deme. “Yetkili katılımcıların kayıtlarını bütünlüğü doğrulanabilir biçimde ilişkilendirmeyi hedefleyen prototip” de.
 
 ## Üretim sisteminde kritik işler

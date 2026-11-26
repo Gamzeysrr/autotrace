@@ -1,0 +1,20 @@
+[toolchain]
+anchor_version = "1.2.2"
+solana_version = "4.1.2"
+
+[features]
+seeds = true
+skip-lint = false
+
+[programs.localnet]
+autotrace_registry = "DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV"
+
+[programs.devnet]
+autotrace_registry = "DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV"
+
+[provider]
+cluster = "Devnet"
+wallet = "~/.config/solana/id.json"
+
+[workspace]
+members = ["programs/autotrace_registry"]

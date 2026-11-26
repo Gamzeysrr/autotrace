@@ -11,7 +11,7 @@ const ADMIN_CONFIG_PATH = path.join(DATA_DIR, 'admin-account.json');
 const PORT = Number(process.env.PORT || 4177);
 const HOST = process.env.HOST || '127.0.0.1';
 const DEVNET_RPC_URL = process.env.AUTOTRACE_DEVNET_RPC || 'https://api.devnet.solana.com';
-const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+const AUTOTRACE_PROGRAM_ID = 'DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV';
 const COOKIE = 'autotrace_session';
 const SESSION_DAYS = 2;
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -132,7 +132,26 @@ function publicUser(user) {
     institutionId:user.institution_id, institutionName:user.institution_name || 'AutoTrace',
     institutionType:user.institution_type || 'Yönetim' };
 }
-async function verifyDevnetMemo(signature, recordId, hash) {
+function decodeBase58(value) {
+  const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const bytes=[0];
+  for (const char of String(value)) {
+    let carry=alphabet.indexOf(char);
+    if(carry<0)throw new Error('Solana instruction encoding is invalid.');
+    for(let i=0;i<bytes.length;i++){carry+=bytes[i]*58;bytes[i]=carry&255;carry>>=8;}
+    while(carry){bytes.push(carry&255);carry>>=8;}
+  }
+  let zeros=0;while(zeros<String(value).length&&String(value)[zeros]==='1')zeros++;
+  const body=bytes.reverse();if(body.length===1&&body[0]===0)body.length=0;
+  return Buffer.from([...new Array(zeros).fill(0),...body]);
+}
+function proofInstruction(recordId,digest) {
+  const clean=String(recordId||'').replaceAll('-','');
+  if(!/^[0-9a-f]{32}$/i.test(clean)||!/^[0-9a-f]{64}$/i.test(String(digest||'')))throw new Error('AutoTrace proof values are invalid.');
+  const discriminator=crypto.createHash('sha256').update('global:anchor_report').digest().subarray(0,8);
+  return Buffer.concat([discriminator,Buffer.from(clean,'hex'),Buffer.from(String(digest),'hex')]);
+}
+async function verifyDevnetProgram(signature, recordId, digest) {
   if (!/^[1-9A-HJ-NP-Za-km-z]{80,90}$/.test(String(signature || ''))) throw new Error('Solana işlem imzası biçimi geçersiz.');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
   try {
@@ -146,13 +165,9 @@ async function verifyDevnetMemo(signature, recordId, hash) {
     if (tx.meta?.err) throw new Error('Solana işlemi başarısız olmuş.');
     if (!tx.transaction?.signatures?.includes(signature)) throw new Error('İmza, Devnet işlem içeriğiyle eşleşmedi.');
     const instructions=tx.transaction.message?.instructions||[];
-    const memoIx=instructions.find(ix=>String(ix.programId)===MEMO_PROGRAM);
-    const parsed=memoIx?.parsed;
-    const memoText=typeof parsed==='string'?parsed:(parsed?.memo||parsed?.info?.memo);
-    if (!memoText) throw new Error('İşlemde okunabilir Memo bulunamadı.');
-    let memo;
-    try { memo=JSON.parse(memoText); } catch { throw new Error('Memo biçimi geçersiz.'); }
-    if (memo.app!=='autotrace' || memo.v!==3 || memo.record_id!==recordId || memo.sha256!==hash) throw new Error('Devnet Memo kaydın özetiyle eşleşmiyor.');
+    const proofIx=instructions.find(ix=>String(ix.programId)===AUTOTRACE_PROGRAM_ID);
+    if(!proofIx)throw new Error('İşlem AutoTrace programını çağırmıyor.');
+    if(!decodeBase58(proofIx.data||'').equals(proofInstruction(recordId,digest)))throw new Error('AutoTrace program instruction does not match this report.');
     const signer=tx.transaction.message.accountKeys?.find(key=>key.signer);
     if (!signer) throw new Error('İşlemi imzalayan cüzdan bulunamadı.');
     return String(signer.pubkey);
@@ -176,7 +191,12 @@ async function handler(req, res) {
     if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error:'Bu kaynağa izin verilmiyor.' });
   }
   try {
-    if (url.pathname === '/api/health') return send(res, 200, { ok:true, mode:'local-demo', chainRequired:true, version:'solana-required-v1' });
+    if (url.pathname === '/api/health') return send(res, 200, { ok:true, mode:'local-demo', chainRequired:true, chainProgram:AUTOTRACE_PROGRAM_ID, chainNetwork:'devnet', version:'autotrace-program-v1' });
+    if (url.pathname === '/api/verify-proof' && req.method === 'GET') {
+      const signature=String(url.searchParams.get('signature')||''),recordId=String(url.searchParams.get('record_id')||''),digest=String(url.searchParams.get('sha256')||'');
+      try { const signer=await verifyDevnetProgram(signature,recordId,digest); return send(res,200,{verified:true,network:'devnet',program:AUTOTRACE_PROGRAM_ID,signer,record_id:recordId,sha256:digest,signature}); }
+      catch(err) { return send(res,422,{verified:false,error:err.message||'AutoTrace proof verification failed.'}); }
+    }
     if (url.pathname === '/api/session' && req.method === 'GET') {
       const user = userFromRequest(req);
       return send(res, 200, { user:user ? publicUser(user) : null });
@@ -268,7 +288,7 @@ async function handler(req, res) {
       const expectedHash=crypto.createHash('sha256').update(String(record.salt)+'|'+JSON.stringify(proofRecord)).digest('hex');
       if (expectedHash!==String(record.hash) || JSON.stringify(proofRecord)!==JSON.stringify(record.proofRecord)) return send(res,400,{error:'Rapor kanıt özeti içerikle eşleşmiyor veya kurum bilgisi değişmiş.'});
       let chainSigner;
-      try { chainSigner=await verifyDevnetMemo(String(record.signature),proofRecord.record_id,expectedHash); }
+      try { chainSigner=await verifyDevnetProgram(String(record.signature),proofRecord.record_id,expectedHash); }
       catch (err) { return send(res,502,{error:err.message||'Solana Devnet kanıtı doğrulanamadı.'}); }
       const safe={...record,record_id:proofRecord.record_id,proofRecord,vin:normalizedVin,source:`${org.name} · ${org.type}`,institution_id:org.id,institution_name:org.name,issuer_user_id:user.id,issuer_name:user.name,issuer:chainSigner,chain_verified:true,status:'AutoTrace yetkili kurum kaydı · Solana Devnet kanıtı doğrulandı',created_at:isoNow(),warn:false};
       const existing=db.prepare('SELECT issuer_user_id FROM records WHERE record_id=?').get(safe.record_id);

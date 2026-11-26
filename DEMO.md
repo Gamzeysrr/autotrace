@@ -6,7 +6,7 @@
 4. Bu bilgisayarda yerel olarak tanımlanmış AutoTrace yönetici hesabıyla gir, **Başvuru onayı** ekranında başvuruyu onayla.
 5. Başvuru sahibi e-posta ve belirlediği şifreyle giriş yapar. Kurum tipi hangi rapor türlerini gönderebileceğini belirler.
 6. Raporu ekle. Sunucu onaylı kullanıcıyı kontrol eder ve raporu veritabanına yazar. Vercel sürümünde bu kayıt Neon Postgres'te kalıcı tutulur; başka tarayıcı oturumundan aynı VIN sorgulanınca görünür.
-7. Rapor yayımlanması için Phantom işlemini Solana Devnet'te onayla. Sunucu işlem imzasını, Memo'yu ve rapor hash'ini Devnet RPC'sinden doğrular; eşleşme yoksa kayıt VIN aramasında görünmez. Phantom cüzdanı demo kurum kullanıcısını temsil etmez.
+7. Rapor yayımlanması için Phantom işlemini Solana Devnet'te onayla. Tarayıcı AutoTrace Anchor programının `anchor_report` instruction'ını gönderir; sunucu işlem imzasını, programı, kayıt kimliğini ve rapor hash'ini Devnet RPC'sinden doğrular. Eşleşme yoksa kayıt VIN aramasında görünmez. Phantom imzası demo kurum kullanıcısının gerçek kurumsal kimliğini kanıtlamaz.
 
 ## Hazır örnek hesaplar
 
@@ -14,4 +14,4 @@
 - Ekspertiz: `ekspertiz@mercek-ekspertiz.test` / `MercekDemo2026!`
 - Servis: `servis@rota-otomotiv.test` / `RotaDemo2026!`
 
-Bütün hazır hesaplar ve senaryo verileri sentetiktir. Canlı kurum verisi entegrasyonu yoktur. Vercel sürümünün canlı çalışması için Neon Postgres'i projeye bağlamak ve `AUTOTRACE_ADMIN_EMAIL` ile `AUTOTRACE_ADMIN_PASSWORD` değişkenlerini ayarlamak gerekir.
+Bütün hazır hesaplar ve senaryo verileri sentetiktir. Canlı kurum verisi entegrasyonu yoktur. Canlı Vercel akışı için Neon Postgres ve yönetici ortam değişkenleri gerekir. Devnet kullanıcı akışı için Anchor programının Devnet'e dağıtılmış olması gerekir.

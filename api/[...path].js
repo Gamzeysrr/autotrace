@@ -3,7 +3,7 @@ const { Pool } = require('@neondatabase/serverless');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const COOKIE = 'autotrace_session';
-const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+const AUTOTRACE_PROGRAM_ID = 'DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV';
 const id = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -81,16 +81,25 @@ async function currentUser(req) {
   const user=rows[0]; if(!user||Number(user.expires_at)<Date.now()||user.status!=='approved')return null; return user;
 }
 function publicUser(u) { return {id:u.id,name:u.name,email:u.email,role:u.role,institutionId:u.institution_id,institutionName:u.institution_name||'AutoTrace',institutionType:u.institution_type||'Yönetim'}; }
-async function verifyMemo(signature,recordId,digest) {
+function decodeBase58(value) {
+  const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',bytes=[0];
+  for(const char of String(value)){let carry=alphabet.indexOf(char);if(carry<0)throw new Error('Solana instruction encoding is invalid.');for(let i=0;i<bytes.length;i++){carry+=bytes[i]*58;bytes[i]=carry&255;carry>>=8;}while(carry){bytes.push(carry&255);carry>>=8;}}
+  let zeros=0;while(zeros<String(value).length&&String(value)[zeros]==='1')zeros++;const decoded=bytes.reverse();if(decoded.length===1&&decoded[0]===0)decoded.length=0;return Buffer.from([...new Array(zeros).fill(0),...decoded]);
+}
+function proofInstruction(recordId,digest) {
+  const clean=String(recordId||'').replaceAll('-','');if(!/^[0-9a-f]{32}$/i.test(clean)||!/^[0-9a-f]{64}$/i.test(String(digest||'')))throw new Error('AutoTrace proof values are invalid.');
+  return Buffer.concat([crypto.createHash('sha256').update('global:anchor_report').digest().subarray(0,8),Buffer.from(clean,'hex'),Buffer.from(String(digest),'hex')]);
+}
+async function verifyProgram(signature,recordId,digest) {
   if(!/^[1-9A-HJ-NP-Za-km-z]{80,90}$/.test(String(signature||'')))throw new Error('Solana işlem imzası biçimi geçersiz.');
   const response=await fetch(process.env.AUTOTRACE_DEVNET_RPC||'https://api.devnet.solana.com',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(10000),body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getTransaction',params:[signature,{commitment:'confirmed',encoding:'jsonParsed',maxSupportedTransactionVersion:0}]})});
   if(!response.ok)throw new Error('Solana Devnet doğrulama servisi yanıt vermedi.');
   const payload=await response.json(),tx=payload.result;
   if(payload.error||!tx)throw new Error('Solana işlemi Devnet’te bulunamadı veya kesinleşmedi.');
   if(tx.meta?.err||!tx.transaction?.signatures?.includes(signature))throw new Error('Solana işlemi başarısız veya imza eşleşmiyor.');
-  const ix=(tx.transaction.message?.instructions||[]).find(x=>String(x.programId)===MEMO_PROGRAM),parsed=ix?.parsed,text=typeof parsed==='string'?parsed:(parsed?.memo||parsed?.info?.memo);
-  let memo; try{memo=JSON.parse(text)}catch{throw new Error('İşlemde okunabilir AutoTrace Memo bulunamadı.');}
-  if(memo.app!=='autotrace'||memo.v!==3||memo.record_id!==recordId||memo.sha256!==digest)throw new Error('Devnet Memo rapor özetiyle eşleşmiyor.');
+  const ix=(tx.transaction.message?.instructions||[]).find(x=>String(x.programId)===AUTOTRACE_PROGRAM_ID);
+  if(!ix)throw new Error('İşlem AutoTrace programını çağırmıyor.');
+  if(!decodeBase58(ix.data||'').equals(proofInstruction(recordId,digest)))throw new Error('AutoTrace program instruction does not match this report.');
   const signer=tx.transaction.message.accountKeys?.find(key=>key.signer); if(!signer)throw new Error('İşlemi imzalayan cüzdan bulunamadı.'); return String(signer.pubkey);
 }
 
@@ -101,7 +110,11 @@ module.exports = async function handler(req,res) {
     await ensureAdmin();
     const p=new URL(req.url,`https://${req.headers.host||'localhost'}`).pathname.replace(/\/$/,'')||'/';
     if (req.method!=='GET'&&req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host) return json(res,403,{error:'Bu kaynağa izin verilmiyor.'});
-    if(p==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,mode:'vercel-postgres',chainRequired:true,version:'solana-required-v1'});
+    if(p==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,mode:'vercel-postgres',chainRequired:true,chainProgram:AUTOTRACE_PROGRAM_ID,chainNetwork:'devnet',version:'autotrace-program-v1'});
+    if(p==='/api/verify-proof'&&req.method==='GET'){
+      const q=new URL(req.url,`https://${req.headers.host}`).searchParams,signature=String(q.get('signature')||''),recordId=String(q.get('record_id')||''),digest=String(q.get('sha256')||'');
+      try{const signer=await verifyProgram(signature,recordId,digest);return json(res,200,{verified:true,network:'devnet',program:AUTOTRACE_PROGRAM_ID,signer,record_id:recordId,sha256:digest,signature})}catch(e){return json(res,422,{verified:false,error:e.message||'AutoTrace proof verification failed.'})}
+    }
     if(p==='/api/session'&&req.method==='GET'){const u=await currentUser(req);return json(res,200,{user:u?publicUser(u):null});}
     if(p==='/api/login'&&req.method==='POST'){
       const b=await body(req),email=String(b.email||'').trim().toLowerCase(),{rows}=await pool.query("SELECT * FROM users WHERE email=$1 AND status='approved'",[email]),u=rows[0];
@@ -141,7 +154,7 @@ module.exports = async function handler(req,res) {
       const b=await body(req),record=b.record;if(!record||!/^[A-HJ-NPR-Z0-9]{17}$/i.test(String(record.vin||''))||!(record.reportNo||record.id)||!record.type||!record.details||!record.hash||!record.salt||!record.proofRecord||!record.signature)return json(res,400,{error:'Rapor alanları eksik. Solana Devnet kanıtı zorunludur.'});
       const vin=String(record.vin).toUpperCase(),allowed={'Sigorta şirketi':['Kaza / hasar kaydı','Sigorta hasar dosyası'],'Ekspertiz firması':['Ekspertiz raporu'],'Yetkili servis':['Onarım / parça değişimi','Kilometre bildirimi']};if(!allowed[org.type]?.includes(String(record.type)))return json(res,403,{error:`${org.type} bu kayıt türünü ekleyemez.`});
       const proof={schema_version:1,record_id:String(record.record_id||record.recordId||''),report_no:String(record.reportNo||record.id),type:String(record.type),vin,source:`${org.name} · ${org.type}`,date:String(record.date||''),details:String(record.details),pdf_sha256:record.proofRecord.pdf_sha256||null};if(!proof.record_id||!/^\d{4}-\d{2}-\d{2}$/.test(proof.date)||proof.details.length>500||proof.report_no.length>40)return json(res,400,{error:'Kayıt alanları beklenen biçimde değil.'});
-      const digest=hash(String(record.salt)+'|'+JSON.stringify(proof));if(digest!==String(record.hash)||JSON.stringify(proof)!==JSON.stringify(record.proofRecord))return json(res,400,{error:'Rapor özeti içerikle eşleşmiyor.'});let signer;try{signer=await verifyMemo(String(record.signature),proof.record_id,digest)}catch(e){return json(res,502,{error:e.message||'Devnet kanıtı doğrulanamadı.'})}
+      const digest=hash(String(record.salt)+'|'+JSON.stringify(proof));if(digest!==String(record.hash)||JSON.stringify(proof)!==JSON.stringify(record.proofRecord))return json(res,400,{error:'Rapor özeti içerikle eşleşmiyor.'});let signer;try{signer=await verifyProgram(String(record.signature),proof.record_id,digest)}catch(e){return json(res,502,{error:e.message||'Devnet kanıtı doğrulanamadı.'})}
       const saved={...record,record_id:proof.record_id,proofRecord:proof,vin,source:proof.source,institution_id:org.id,institution_name:org.name,issuer_user_id:u.id,issuer_name:u.name,issuer:signer,chain_verified:true,status:'AutoTrace yetkili kurum kaydı · Solana Devnet kanıtı doğrulandı',created_at:now(),warn:false};
       const {rows:existing}=await pool.query('SELECT issuer_user_id FROM records WHERE record_id=$1',[saved.record_id]);if(existing[0]&&existing[0].issuer_user_id!==u.id)return json(res,409,{error:'Bu kayıt kodu başka bir kurum hesabına ait.'});
       await pool.query(`INSERT INTO records(record_id,vin,body_json,issuer_user_id,institution_id,created_at) VALUES($1,$2,$3::jsonb,$4,$5,$6)

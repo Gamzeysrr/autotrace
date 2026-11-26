@@ -1,0 +1,18 @@
+[package]
+name = "autotrace_registry"
+version = "0.1.0"
+description = "Immutable Solana report-integrity registry for AutoTrace"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+no-entrypoint = []
+cpi = ["no-entrypoint"]
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "1.2.2", default-features = false, features = ["solana-v4"] }

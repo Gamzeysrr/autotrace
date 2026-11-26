@@ -32,13 +32,15 @@ Giriş ekranındaki hazır kurum hesabı düğmeleri alanları doldurur. AutoTra
 
 Bu kodlar gerçek VIN değildir; yalnızca ürün akışını göstermek için hazırlanmış sentetik senaryolardır.
 
-## Solana Devnet kanıtı
+## AutoTrace Solana programı
 
-Raporu yayımlamak için Phantom ile hash'i Solana Devnet Memo'suna yazmak zorunludur. Sunucu Devnet `getTransaction` RPC çağrısıyla işlem onayını, Memo programını, kayıt kimliğini ve SHA-256 özetini doğrular; bunlar eşleşmeden rapor veritabanına eklenmez ve VIN aramasında görünmez. Memo yalnızca rastgele kayıt kimliği ve tuzlanmış SHA-256 içerir; VIN ve rapor içeriği zincire yazılmaz. Memo işlemini kurumun kayıtlı cüzdanı değil, tarayıcıdaki kullanıcının seçtiği Phantom cüzdanı imzalar. Bu imza kurumsal kimlik kanıtı sayılmaz.
+AutoTrace'a özgü Anchor programı [`programs/autotrace_registry/src/lib.rs`](programs/autotrace_registry/src/lib.rs) içinde bulunur. `anchor_report` instruction'ı her rapor için yeni PDA oluşturur; PDA'ya imzalayan cüzdanı, rastgele kayıt kimliğini, tuzlanmış SHA-256 özetini ve zamanı yazar. Programda mevcut PDA'yı değiştiren bir instruction yoktur; aynı cüzdan aynı kayıt kimliğini ikinci kez yazamaz. VIN, plaka, rapor numarası, rapor içeriği veya PDF zincire gönderilmez.
 
-Phantom yoksa rapor yayımlanmaz ve VIN aramasında görünmez. Phantom'u kurup sayfayı yenile, kurum hesabıyla yeniden giriş yap ve rapor formunu tekrar gönder.
+Program adresi: [`DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV`](https://explorer.solana.com/address/DdgCkKAxxCm6jAy5bss4mkCq9djBw9KNHDaqxjmT7ChV?cluster=devnet). Devnet dağıtım işlemi: [`5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2`](https://explorer.solana.com/tx/5AqvfXM4LdZFPoJ37P6ixcSnkVVCj6TfCXMfPw6Wsz6bFiEj31GpJ1s4wE9pPtgRJPFgsAAzt2ecwsBYnt9gt9w2?cluster=devnet). Explorer program hesabını Devnet'te `Executable: Yes` ve `Upgradeable: Yes` olarak gösteriyor. Adres `Anchor.toml`, `server.js`, Vercel API'si ve tarayıcı tarafından kullanılır. Sunucu, Devnet `getTransaction` RPC çağrısıyla başarılı işlemi, program kimliğini, Anchor instruction verisini, kayıt kimliğini ve hash'i doğrulamadan kaydı yayımlamaz.
 
-Devnet kanıt dosyası, rapor içeriğini ve VIN'i içerebilir; yalnızca paylaşım izni olan kişiye gönderin.
+Program Solana Playground'da derlenip Devnet'e dağıtılmıştır. Anchor projesi [Solana Playground](https://beta.solpg.io/) içinde veya Anchor CLI/WSL kurulu ortamda açılabilir. Windows'ta resmi Anchor kurulumu WSL gerektirir. Özel anahtar veya seed phrase'i depoya, sohbete ya da doğrulama paketine koyma.
+
+Rapor doğrulama paketi zincir dışında tutulan VIN ve rapor alanlarını içerebilir; yalnızca paylaşım izni olan kişiye gönderin. Programı derlemek, dağıtım ve zincirde doğrulama anlamına gelmez; bu üç adım birbirinden ayrıdır.
 
 ## Vercel ve kalıcı veritabanı
 
@@ -50,7 +52,7 @@ Vercel için `/api/*` uç noktaları `api/[...path].js` üzerinden çalışır v
 
 Postgres tabloları ilk API çağrısında oluşturulur. Demo kurum hesapları sentetik olarak eklenir; kurum başvuruları, onay durumu, oturumlar ve Solana doğrulamalı raporlar kalıcı Postgres tablolarında tutulur. Yerel admin ayarı ve `data/` klasörü depoya gönderilmez. Gerekli değişkenler `.env.example` içinde listelenmiştir.
 
-Bu, gerçek kurumlara bağlı ticari bir araç sicili değildir. Kurum doğrulaması admin onayıyla sınırlıdır; örnek şirket hesapları sentetiktir. Üretim için gerçek kurum kimliği ve e-posta doğrulaması, kurum cüzdanlarının bağlanması, veri gizliliği/erişim politikaları ve yedekleme gerekir. Özel Anchor programı/PDA kaydı yoktur; Solana Memo içerik özetinin sonradan değişmediğine kanıt verir, raporun ilk günden doğru olduğunu kanıtlamaz. VIN ve rapor içeriği zincire yazılmaz.
+Bu, gerçek kurumlara bağlı ticari bir araç sicili değildir. Kurum doğrulaması admin onayıyla sınırlıdır; örnek şirket hesapları sentetiktir. Program PDA'sı içeriğin sonradan değişmediğine kanıt verir, raporun ilk günden doğru olduğunu kanıtlamaz. Programı çağıran cüzdanın gerçek kurum kimliği ayrıca doğrulanmaz. Üretim için gerçek kurum kimliği ve e-posta doğrulaması, kurum cüzdanlarının allowlist'e alınması, veri gizliliği/erişim politikaları ve yedekleme gerekir.
 
 ## Teknik
 

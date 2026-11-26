@@ -52,6 +52,14 @@ Each credential is listed separately so visitors can copy and paste it into the 
 - Email: `servis@rota-otomotiv.test`
 - Password: `RotaDemo2026!`
 
+**Seeded sample applications (pending review)**
+
+- Blue Harbor Insurance (sample) — `claims@blueharbor-insurance.test`
+- Clearview Inspection Group (sample) — `applications@clearview-inspection.test`
+- Cedar Motor Works (sample) — `intake@cedar-motorworks.test`
+
+These fictional requests appear in Application Review and are marked as sample requests. If approved, each created demo user uses `SampleApproval2026!` as its password.
+
 The **Fill sign-in form** buttons enter the selected public demo credentials. To try the application flow, sign in with the public Demo Reviewer account, approve a fictional institution application, then sign in with the applicant's account and submit a report. The owner's private administrator credentials are kept separate and are not included in source files or packages.
 
 ## Sample vehicle scenarios

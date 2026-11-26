@@ -108,6 +108,21 @@ if (!db.prepare('SELECT 1 FROM institutions LIMIT 1').get()) {
 ensureAdminAccount();
 // Public jury credentials are separate from the owner's private administrator account.
 seedUser('reviewer@autotrace.test', 'AutoTraceReview2026!', 'AutoTrace Demo Reviewer', 'admin');
+function seedSampleApplications() {
+  const insert=db.prepare(`INSERT OR IGNORE INTO applications
+    (id,institution_name,institution_type,contact_name,email,password_salt,password_hash,status,created_at)
+    VALUES(?,?,?,?,?,?,?,'pending',?)`);
+  const samples=[
+    ['sample-app-blue-harbor','Blue Harbor Insurance (sample)','Sigorta şirketi','Demo Claims Contact','claims@blueharbor-insurance.test'],
+    ['sample-app-clearview','Clearview Inspection Group (sample)','Ekspertiz firması','Demo Inspection Contact','applications@clearview-inspection.test'],
+    ['sample-app-cedar','Cedar Motor Works (sample)','Yetkili servis','Demo Service Contact','intake@cedar-motorworks.test']
+  ];
+  for(const [appId,institution,type,contact,email] of samples){
+    const pw=password('SampleApproval2026!');
+    insert.run(appId,institution,type,contact,email,pw.salt,pw.hash,isoNow());
+  }
+}
+seedSampleApplications();
 
 const mime = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.svg':'image/svg+xml', '.png':'image/png', '.jpg':'image/jpeg', '.webp':'image/webp', '.ico':'image/x-icon' };
 function send(res, status, data, headers = {}) {

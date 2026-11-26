@@ -52,6 +52,17 @@ async function initialize() {
           VALUES($1,$2,$3,$4,$5,$6,'issuer','approved',$7) ON CONFLICT(email) DO NOTHING`,[id(),orgId,nameUser,userEmail,pw.salt,pw.hash,now()]);
       }
     }
+    const sampleApplications=[
+      ['sample-app-blue-harbor','Blue Harbor Insurance (sample)','Sigorta şirketi','Demo Claims Contact','claims@blueharbor-insurance.test'],
+      ['sample-app-clearview','Clearview Inspection Group (sample)','Ekspertiz firması','Demo Inspection Contact','applications@clearview-inspection.test'],
+      ['sample-app-cedar','Cedar Motor Works (sample)','Yetkili servis','Demo Service Contact','intake@cedar-motorworks.test']
+    ];
+    for(const [appId,institution,type,contact,email] of sampleApplications){
+      const pw=makePassword('SampleApproval2026!');
+      await pool.query(`INSERT INTO applications(id,institution_name,institution_type,contact_name,email,password_salt,password_hash,status,created_at)
+        VALUES($1,$2,$3,$4,$5,$6,$7,'pending',$8) ON CONFLICT(id) DO NOTHING`,
+        [appId,institution,type,contact,email,pw.salt,pw.hash,now()]);
+    }
   })().catch(error => { schemaReady=null; throw error; });
   await schemaReady;
 }
